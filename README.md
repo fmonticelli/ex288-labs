@@ -48,12 +48,12 @@ Legenda:
 
 ## 3. BuildConfig e Builds
 
-- ⬜ Criar BuildConfig
-- ⬜ Build a partir de Git
-- ⬜ Utilizar `contextDir`
-- ⬜ Docker / Containerfile build strategy
-- ⬜ Configurar output do build
-- ⬜ Iniciar build manualmente
+- ✅ Criar BuildConfig
+- ✅ Build a partir de Git
+- ✅ Utilizar `contextDir`
+- ✅ Docker / Containerfile build strategy
+- ✅ Configurar output do build
+- 🟡 Iniciar build manualmente
 - ⬜ Acompanhar logs de build
 - ⬜ Cancelar builds
 - ⬜ Reiniciar builds
@@ -65,12 +65,12 @@ Legenda:
 
 ## 4. ImageStreams
 
-- ⬜ Entender ImageStreams
-- ⬜ Criar ImageStream
-- ⬜ Trabalhar com ImageStreamTag
-- ⬜ Entender tag x digest
-- ⬜ Publicar imagens no ImageStream
-- ⬜ Utilizar o registry interno do OpenShift
+- ✅ Entender ImageStreams
+- ✅ Criar ImageStream
+- ✅ Trabalhar com ImageStreamTag
+- 🟡 Entender tag x digest
+- ✅ Publicar imagens no ImageStream
+- ✅ Utilizar o registry interno do OpenShift
 - ⬜ Consumir ImageStream em aplicações
 - ⬜ Image change triggers
 - ⬜ Troubleshooting de ImageStreams
