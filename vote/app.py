@@ -11,10 +11,10 @@ PAGE = """
 <!doctype html>
 <html>
 <head>
-    <title>EX288 Voting App</title>
+    <title>EX288 Voting App v2</title>
 </head>
 <body>
-    <h1>EX288 Voting App</h1>
+    <h1>EX288 Voting App v2</h1>
 
     <form method="POST" action="/vote">
         <button name="option" value="cats">Cats</button>
