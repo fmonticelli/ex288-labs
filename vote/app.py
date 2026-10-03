@@ -21,7 +21,7 @@ PAGE = """
         <button name="option" value="dogs">Dogs</button>
     </form>
 
-    <h2>Results</h2>
+    <h2>########## Results ##########</h2>
     <p>Cats: {{ votes["cats"] }}</p>
     <p>Dogs: {{ votes["dogs"] }}</p>
 </body>
