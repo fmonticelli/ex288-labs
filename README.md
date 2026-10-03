@@ -18,33 +18,33 @@ Legenda:
 
 ## 1. Fundamentos OpenShift e Git
 
-- ⬜ Trabalhar com Projects / Namespaces
-- ⬜ Trabalhar com Pods
-- ⬜ Criar e gerenciar Deployments
-- ⬜ Entender ReplicaSets e revisões de rollout
-- ⬜ Criar e utilizar Services
-- ⬜ Criar e utilizar Routes
-- ⬜ Trabalhar com Git no fluxo de deployment
+- ✅ Trabalhar com Projects / Namespaces
+- ✅ Trabalhar com Pods
+- ✅ Criar e gerenciar Deployments
+- 🟡 Entender ReplicaSets e revisões de rollout
+- ✅ Criar e utilizar Services
+- ✅ Criar e utilizar Routes
+- ✅ Trabalhar com Git no fluxo de deployment
 - ⬜ Utilizar o console web do OpenShift
-- ⬜ Utilizar a CLI `oc`
+- ✅ Utilizar a CLI `oc`
 
 ## 2. Container Images
 
-- ⬜ Criar Containerfile
-- ⬜ `FROM`
-- ⬜ `WORKDIR`
-- ⬜ `COPY`
-- ⬜ `RUN`
-- ⬜ `ENV`
-- ⬜ `EXPOSE`
-- ⬜ `ENTRYPOINT` e `CMD`
-- ⬜ Build de imagem
-- ⬜ Cache de layers
-- ⬜ Multi-stage builds
-- ⬜ Execução com usuário não-root
-- ⬜ Compatibilidade com UID arbitrário
-- ⬜ Permissões de arquivos e diretórios
-- ⬜ Utilizar imagens no OpenShift
+- ✅ Criar Containerfile
+- ✅ `FROM`
+- ✅ `WORKDIR`
+- ✅ `COPY`
+- ✅ `RUN`
+- ✅ `ENV`
+- ✅ `EXPOSE`
+- ✅ `ENTRYPOINT` e `CMD`
+- ✅ Build de imagem
+- ✅ Cache de layers
+- 🟡 Multi-stage builds
+- ✅ Execução com usuário não-root
+- ✅ Compatibilidade com UID arbitrário
+- ✅ Permissões de arquivos e diretórios
+- ✅ Utilizar imagens no OpenShift
 
 ## 3. BuildConfig e Builds
 
@@ -57,23 +57,23 @@ Legenda:
 - ⬜ Acompanhar logs de build
 - ⬜ Cancelar builds
 - ⬜ Reiniciar builds
-- ⬜ Build triggers
+- 🟡 Build triggers
 - ⬜ Build hooks
 - ⬜ Post-commit hooks
 - ⬜ Custom builder
-- ⬜ Troubleshooting de builds
+- 🟡 Troubleshooting de builds
 
 ## 4. ImageStreams
 
 - ✅ Entender ImageStreams
-- ✅ Criar ImageStream
+- 🟡 Criar ImageStream
 - ✅ Trabalhar com ImageStreamTag
-- 🟡 Entender tag x digest
+- ✅ Entender tag x digest
 - ✅ Publicar imagens no ImageStream
 - ✅ Utilizar o registry interno do OpenShift
-- ⬜ Consumir ImageStream em aplicações
-- ⬜ Image change triggers
-- ⬜ Troubleshooting de ImageStreams
+- 🟡 Consumir ImageStream em aplicações
+- 🟡 Image change triggers
+- 🟡 Troubleshooting de ImageStreams
 
 ## 5. Source-to-Image (S2I)
 
@@ -110,33 +110,33 @@ Legenda:
 
 ## 8. Deployments e aplicações
 
-- ⬜ Criar aplicação single-container
+- ✅ Criar aplicação single-container
 - ⬜ Criar aplicação multi-container
-- ⬜ Criar Deployment
-- ⬜ Atualizar aplicações
-- ⬜ Acompanhar rollouts
-- ⬜ Consultar histórico de rollout
+- ✅ Criar Deployment
+- 🟡 Atualizar aplicações
+- 🟡 Acompanhar rollouts
+- 🟡 Consultar histórico de rollout
 - ⬜ Executar rollback
-- ⬜ Criar Service
-- ⬜ Criar Route
-- ⬜ Validar aplicação ponta a ponta
+- ✅ Criar Service
+- ✅ Criar Route
+- ✅ Validar aplicação ponta a ponta
 
 ## 9. Troubleshooting
 
-- ⬜ `oc get`
-- ⬜ `oc describe`
-- ⬜ `oc logs`
+- ✅ `oc get`
+- ✅ `oc describe`
+- 🟡 `oc logs`
 - ⬜ `oc logs -p`
 - ⬜ `oc exec`
-- ⬜ Consultar Events
+- 🟡 Consultar Events
 - ⬜ Diagnosticar `Pending`
 - ⬜ Diagnosticar `CrashLoopBackOff`
 - ⬜ Diagnosticar `ImagePullBackOff`
 - ⬜ Diagnosticar falhas de Deployment
 - ⬜ Diagnosticar Services
 - ⬜ Diagnosticar Routes
-- ⬜ Diagnosticar Builds
-- ⬜ Diagnosticar ImageStreams
+- 🟡 Diagnosticar Builds
+- 🟡 Diagnosticar ImageStreams
 - ⬜ Diagnosticar problemas de configuração
 
 ## 10. OpenShift Templates
@@ -230,15 +230,21 @@ Repositório de estudos:
 ex288-labs
 ```
 
-Estrutura inicial:
+Estrutura atual:
 
 ```text
 ex288-labs/
 ├── README.md
-└── .gitignore
+├── .gitignore
+├── hello/
+│   ├── Dockerfile
+│   ├── package.json
+│   └── server.js
+└── vote/
+    ├── Dockerfile
+    ├── app.py
+    └── requirements.txt
 ```
-
-Nenhuma aplicação de laboratório é considerada criada neste momento.
 
 As aplicações, manifests e demais artefatos serão adicionados conforme os tópicos forem estudados.
 
@@ -272,12 +278,56 @@ Ao concluir cada etapa, atualizar este README antes de avançar.
 
 # Etapa atual
 
-## Fase 1 — Fundamentos OpenShift e Git
+## Fase 3 — BuildConfig e Builds
 
 Status:
 
 ```text
-⬜ Não iniciada
+🟡 Em andamento
 ```
 
-O primeiro laboratório será criado durante esta fase.
+Até o momento foram praticados:
+
+```text
+Git
+ ↓
+BuildConfig
+ ↓
+Build
+ ↓
+ImageStream
+ ↓
+Registry interno
+```
+
+Também foi praticado o consumo da imagem gerada para criação de uma aplicação completa:
+
+```text
+Image
+ ↓
+Deployment
+ ↓
+ReplicaSet
+ ↓
+Pod
+ ↓
+Service
+ ↓
+Route
+```
+
+A aplicação `vote` foi publicada por uma Route utilizando:
+
+```text
+TLS termination: edge
+Insecure policy: Redirect
+```
+
+Próximos tópicos:
+
+```text
+Build manual
+Build logs
+Build triggers
+Image change triggers
+```
