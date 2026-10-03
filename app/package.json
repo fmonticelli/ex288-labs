@@ -1,0 +1,12 @@
+{
+  "name": "ex288-container-lab",
+  "version": "1.0.0",
+  "description": "Aplicacao Node.js simples para estudo de Containerfile",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "4.21.2"
+  }
+}
