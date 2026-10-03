@@ -1,8 +1,5 @@
 FROM registry.access.redhat.com/ubi9/nodejs-20
 
-ENV PORT=8080
-ENV APP_MESSAGE="EX288 lab funcionando!"
-
 WORKDIR /opt/app-root/src
 
 COPY package.json ./
@@ -11,12 +8,6 @@ RUN npm install
 
 COPY server.js ./
 
-RUN mkdir /opt/app-root/src/data && \
-    chgrp -R 0 /opt/app-root/src/data && \
-    chmod -R g=u /opt/app-root/src/data
-
 EXPOSE 8080
 
-HEALTHCHECK CMD curl -f http://localhost:8080/health || exit 1
-
-ENTRYPOINT [ "node", "server.js" ]
+CMD ["node", "server.js"]
