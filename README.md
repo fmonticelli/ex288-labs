@@ -21,7 +21,7 @@ Legenda:
 - ✅ Trabalhar com Projects / Namespaces
 - ✅ Trabalhar com Pods
 - ✅ Criar e gerenciar Deployments
-- 🟡 Entender ReplicaSets e revisões de rollout
+- ✅ Entender ReplicaSets e revisões de rollout
 - ✅ Criar e utilizar Services
 - ✅ Criar e utilizar Routes
 - ✅ Trabalhar com Git no fluxo de deployment
@@ -53,8 +53,8 @@ Legenda:
 - ✅ Utilizar `contextDir`
 - ✅ Docker / Containerfile build strategy
 - ✅ Configurar output do build
-- 🟡 Iniciar build manualmente
-- ⬜ Acompanhar logs de build
+- ✅ Iniciar build manualmente
+- ✅ Acompanhar logs de build
 - ⬜ Cancelar builds
 - ⬜ Reiniciar builds
 - 🟡 Build triggers
@@ -71,8 +71,8 @@ Legenda:
 - ✅ Entender tag x digest
 - ✅ Publicar imagens no ImageStream
 - ✅ Utilizar o registry interno do OpenShift
-- 🟡 Consumir ImageStream em aplicações
-- 🟡 Image change triggers
+- ✅ Consumir ImageStream em aplicações
+- ✅ Image change triggers
 - 🟡 Troubleshooting de ImageStreams
 
 ## 5. Source-to-Image (S2I)
@@ -113,8 +113,8 @@ Legenda:
 - ✅ Criar aplicação single-container
 - ⬜ Criar aplicação multi-container
 - ✅ Criar Deployment
-- 🟡 Atualizar aplicações
-- 🟡 Acompanhar rollouts
+- ✅ Atualizar aplicações
+- ✅ Acompanhar rollouts
 - 🟡 Consultar histórico de rollout
 - ⬜ Executar rollback
 - ✅ Criar Service
@@ -303,7 +303,7 @@ Registry interno
 Também foi praticado o consumo da imagem gerada para criação de uma aplicação completa:
 
 ```text
-Image
+ImageStreamTag
  ↓
 Deployment
  ↓
@@ -323,11 +323,81 @@ TLS termination: edge
 Insecure policy: Redirect
 ```
 
+Foi praticado rebuild manual com acompanhamento dos logs:
+
+```text
+oc start-build vote --follow
+```
+
+Também foi configurado e validado um trigger de webhook no BuildConfig, permitindo o fluxo:
+
+```text
+git push
+ ↓
+GitHub webhook
+ ↓
+BuildConfig/vote
+ ↓
+Build automático
+ ↓
+ImageStreamTag vote:latest
+```
+
+Durante o troubleshooting do webhook foram observados problemas de autorização/RBAC e validado o funcionamento do endpoint de webhook.
+
+No Deployment foi configurado um ImageChange trigger para `vote:latest`:
+
+```text
+vote:latest recebe novo digest
+ ↓
+ImageChange trigger
+ ↓
+Deployment atualizado
+ ↓
+novo ReplicaSet
+ ↓
+novo Pod
+```
+
+O fluxo completo validado ao final da sessão foi:
+
+```text
+git push
+ ↓
+webhook
+ ↓
+Build automático
+ ↓
+vote:latest atualizado
+ ↓
+ImageChange trigger do Deployment
+ ↓
+rollout automático
+ ↓
+novo ReplicaSet / Pod
+```
+
 Próximos tópicos:
 
 ```text
-Build manual
-Build logs
-Build triggers
-Image change triggers
+ImageChange trigger no BuildConfig
+Cancelamento e reinício de Builds
+Build hooks
+Post-commit hooks
+```
+
+O próximo experimento deve validar o encadeamento:
+
+```text
+python-311:latest muda
+ ↓
+ImageChange trigger do BuildConfig
+ ↓
+novo Build de vote
+ ↓
+vote:latest muda
+ ↓
+ImageChange trigger do Deployment
+ ↓
+rollout automático
 ```
