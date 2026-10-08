@@ -11,17 +11,17 @@ PAGE = """
 <!doctype html>
 <html>
 <head>
-    <title>EX288 Voting App v2</title>
+    <title>EX288 Voting App v9999999</title>
 </head>
 <body>
-    <h1>EX288 Voting App v2</h1>
+    <h1>EX288 Voting App v9999999</h1>
 
     <form method="POST" action="/vote">
         <button name="option" value="cats">Cats</button>
         <button name="option" value="dogs">Dogs</button>
     </form>
 
-    <h2>##### Results #####</h2>
+    <h2>Results: </h2>
     <p>Cats: {{ votes["cats"] }}</p>
     <p>Dogs: {{ votes["dogs"] }}</p>
 </body>
