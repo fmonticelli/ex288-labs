@@ -14,6 +14,23 @@ Legenda:
 
 ---
 
+<!-- TOPICS_INDEX_START -->
+
+# Material estudado
+
+Documentação prática dos tópicos já trabalhados:
+
+- [01 — Fundamentos OpenShift e Git](topics/01-openshift-git/)
+- [02 — Container Images](topics/02-container-images/)
+- [03 — BuildConfig e Builds](topics/03-buildconfig-builds/)
+- [04 — ImageStreams](topics/04-imagestreams/)
+- [08 — Deployments e aplicações](topics/08-deployments-applications/)
+- [09 — Troubleshooting](topics/09-troubleshooting/)
+
+Cada diretório contém conceitos, comandos utilizados, exercícios, validações e problemas encontrados durante os laboratórios.
+
+<!-- TOPICS_INDEX_END -->
+
 # Checklist EX288
 
 ## 1. Fundamentos OpenShift e Git
@@ -240,9 +257,22 @@ ex288-labs/
 │   ├── Dockerfile
 │   ├── package.json
 │   └── server.js
+├── topics/
+│   ├── 01-openshift-git/
+│   │   └── README.md
+│   ├── 02-container-images/
+│   │   └── README.md
+│   ├── 03-buildconfig-builds/
+│   │   └── README.md
+│   ├── 04-imagestreams/
+│   │   └── README.md
+│   ├── 08-deployments-applications/
+│   │   └── README.md
+│   └── 09-troubleshooting/
+│       └── README.md
 └── vote/
-    ├── Dockerfile
     ├── app.py
+    ├── Dockerfile
     └── requirements.txt
 ```
 
@@ -286,7 +316,7 @@ Status:
 🟡 Em andamento
 ```
 
-Até o momento foram praticados:
+Fluxos já praticados:
 
 ```text
 Git
@@ -299,8 +329,6 @@ ImageStream
  ↓
 Registry interno
 ```
-
-Também foi praticado o consumo da imagem gerada para criação de uma aplicação completa:
 
 ```text
 ImageStreamTag
@@ -316,50 +344,7 @@ Service
 Route
 ```
 
-A aplicação `vote` foi publicada por uma Route utilizando:
-
-```text
-TLS termination: edge
-Insecure policy: Redirect
-```
-
-Foi praticado rebuild manual com acompanhamento dos logs:
-
-```text
-oc start-build vote --follow
-```
-
-Também foi configurado e validado um trigger de webhook no BuildConfig, permitindo o fluxo:
-
-```text
-git push
- ↓
-GitHub webhook
- ↓
-BuildConfig/vote
- ↓
-Build automático
- ↓
-ImageStreamTag vote:latest
-```
-
-Durante o troubleshooting do webhook foram observados problemas de autorização/RBAC e validado o funcionamento do endpoint de webhook.
-
-No Deployment foi configurado um ImageChange trigger para `vote:latest`:
-
-```text
-vote:latest recebe novo digest
- ↓
-ImageChange trigger
- ↓
-Deployment atualizado
- ↓
-novo ReplicaSet
- ↓
-novo Pod
-```
-
-O fluxo completo validado ao final da sessão foi:
+Também foi validado o fluxo automatizado:
 
 ```text
 git push
@@ -377,6 +362,8 @@ rollout automático
 novo ReplicaSet / Pod
 ```
 
+O webhook externo e o RoleBinding usados no laboratório foram posteriormente removidos para evitar builds desnecessários a cada alteração no repositório.
+
 Próximos tópicos:
 
 ```text
@@ -386,7 +373,7 @@ Build hooks
 Post-commit hooks
 ```
 
-O próximo experimento deve validar o encadeamento:
+Próximo experimento:
 
 ```text
 python-311:latest muda
