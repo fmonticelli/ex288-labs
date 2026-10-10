@@ -257,6 +257,10 @@ ex288-labs/
 │   ├── Dockerfile
 │   ├── package.json
 │   └── server.js
+├── tasks/
+│   ├── Dockerfile
+│   ├── app.py
+│   └── requirements.txt
 ├── topics/
 │   ├── 01-openshift-git/
 │   │   └── README.md
@@ -363,6 +367,52 @@ novo ReplicaSet / Pod
 ```
 
 O webhook externo e o RoleBinding usados no laboratório foram posteriormente removidos para evitar builds desnecessários a cada alteração no repositório.
+
+## Recapitulação prática — aplicação `tasks`
+
+Foi criada uma terceira aplicação para repetir o fluxo de build e deployment sem utilizar `oc new-app`.
+
+A aplicação foi construída a partir do diretório `tasks` do repositório utilizando Docker strategy e `contextDir`.
+
+Estado validado:
+
+```text
+Git
+ ↓
+BuildConfig/tasks
+ ↓
+Build/tasks-1
+ ↓
+ImageStreamTag tasks:latest
+ ↓
+Deployment/tasks
+ ↓
+ReplicaSet
+ ↓
+Pod
+ ↓
+Service/tasks
+ ↓
+Route/tasks
+```
+
+Também foi configurado o ImageChange trigger do Deployment:
+
+```text
+tasks:latest recebe novo digest
+ ↓
+ImageChange trigger
+ ↓
+Deployment atualizado
+ ↓
+novo ReplicaSet
+ ↓
+novo Pod
+```
+
+A Route foi criada com TLS termination `edge` e `Redirect` para requisições HTTP.
+
+Esse exercício foi tratado como recapitulação prática / mini-simulado. Os itens de simulados formais permanecem pendentes até serem executados de forma cronometrada e sem intervenção.
 
 Próximos tópicos:
 
