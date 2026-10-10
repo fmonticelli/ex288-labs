@@ -18,8 +18,7 @@ Legenda:
 
 # Material estudado
 
-Documentação prática dos tópicos já trabalhados:
-
+- [🧭 Mindmap navegável](mindmap/)
 - [01 — Fundamentos OpenShift e Git](topics/01-openshift-git/)
 - [02 — Container Images](topics/02-container-images/)
 - [03 — BuildConfig e Builds](topics/03-buildconfig-builds/)
@@ -27,7 +26,7 @@ Documentação prática dos tópicos já trabalhados:
 - [08 — Deployments e aplicações](topics/08-deployments-applications/)
 - [09 — Troubleshooting](topics/09-troubleshooting/)
 
-Cada diretório contém conceitos, comandos utilizados, exercícios, validações e problemas encontrados durante os laboratórios.
+O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `topics/` guardam conceitos, comandos, exercícios, validações e troubleshooting realizados durante os laboratórios.
 
 <!-- TOPICS_INDEX_END -->
 
@@ -72,18 +71,21 @@ Cada diretório contém conceitos, comandos utilizados, exercícios, validaçõe
 - ✅ Configurar output do build
 - ✅ Iniciar build manualmente
 - ✅ Acompanhar logs de build
-- ⬜ Cancelar builds
-- ⬜ Reiniciar builds
-- 🟡 Build triggers
-- ⬜ Build hooks
-- ⬜ Post-commit hooks
-- ⬜ Custom builder
+- ✅ Cancelar builds
+- ✅ Reiniciar builds com `oc cancel-build --restart`
+- ✅ Reexecutar build com `oc start-build --from-build`
+- ✅ Build triggers
+- ✅ ImageChange trigger no BuildConfig
+- ✅ Configurar histórico de builds
+- ✅ Build Run Policy: `Serial`, `Parallel` e `SerialLatestOnly`
+- ✅ Post-commit build hook
+- 🟡 Custom builder
 - 🟡 Troubleshooting de builds
 
 ## 4. ImageStreams
 
 - ✅ Entender ImageStreams
-- 🟡 Criar ImageStream
+- ✅ Criar ImageStream
 - ✅ Trabalhar com ImageStreamTag
 - ✅ Entender tag x digest
 - ✅ Publicar imagens no ImageStream
@@ -257,6 +259,8 @@ ex288-labs/
 │   ├── Dockerfile
 │   ├── package.json
 │   └── server.js
+├── mindmap/
+│   └── README.md
 ├── tasks/
 │   ├── Dockerfile
 │   ├── app.py
@@ -288,8 +292,6 @@ As aplicações, manifests e demais artefatos serão adicionados conforme os tó
 
 Cada tópico será estudado por meio de tarefas práticas semelhantes às atividades esperadas em um ambiente OpenShift.
 
-Fluxo de estudo:
-
 ```text
 conceito
    ↓
@@ -306,7 +308,15 @@ Um item só recebe ✅ quando consigo executar a tarefa prática sem depender de
 
 Se o assunto já foi praticado mas ainda precisa de reforço, recebe 🟡.
 
-Ao concluir cada etapa, atualizar este README antes de avançar.
+Ao concluir cada etapa:
+
+```text
+atualizar checklist
+      ↓
+atualizar README técnico do tópico
+      ↓
+atualizar mindmap
+```
 
 ---
 
@@ -317,10 +327,11 @@ Ao concluir cada etapa, atualizar este README antes de avançar.
 Status:
 
 ```text
-🟡 Em andamento
+✅ Conteúdo principal concluído
+🟡 Custom Builder: revisar execução com uma builder image real
 ```
 
-Fluxos já praticados:
+### Fluxo de build validado
 
 ```text
 Git
@@ -329,59 +340,80 @@ BuildConfig
  ↓
 Build
  ↓
-ImageStream
+ImageStreamTag
  ↓
 Registry interno
 ```
 
-```text
-ImageStreamTag
- ↓
-Deployment
- ↓
-ReplicaSet
- ↓
-Pod
- ↓
-Service
- ↓
-Route
-```
-
-Também foi validado o fluxo automatizado:
+### ImageChange encadeado validado
 
 ```text
-git push
+ImageStreamTag da imagem-base muda
  ↓
-webhook
+ImageChange trigger do BuildConfig
  ↓
-Build automático
+novo Build automático
  ↓
-vote:latest atualizado
+ImageStreamTag da aplicação muda
  ↓
 ImageChange trigger do Deployment
- ↓
-rollout automático
  ↓
 novo ReplicaSet / Pod
 ```
 
-O webhook externo e o RoleBinding usados no laboratório foram posteriormente removidos para evitar builds desnecessários a cada alteração no repositório.
+O fluxo foi validado utilizando `python-base-lab:latest`, alternando entre imagens Python 3.11 e 3.12. A alteração de digest disparou automaticamente `tasks-12` e `tasks-13`, sem `oc start-build` manual.
 
-## Recapitulação prática — aplicação `tasks`
+### Operações de Build praticadas
 
-Foi criada uma terceira aplicação para repetir o fluxo de build e deployment sem utilizar `oc new-app`.
+```text
+oc start-build
+oc start-build --follow
+oc cancel-build
+oc cancel-build --restart
+oc start-build --from-build
+```
 
-A aplicação foi construída a partir do diretório `tasks` do repositório utilizando Docker strategy e `contextDir`.
+Também foram praticados:
 
-Estado validado:
+- `successfulBuildsHistoryLimit`
+- `oc edit bc/...` e `oc patch bc/...`
+- `Serial`, `Parallel` e `SerialLatestOnly`
+- `postCommit` com sucesso e falha intencional
+- configuração de `customStrategy`
+- webhook e troubleshooting de RBAC
+
+### Post-commit validado
+
+```text
+imagem construída
+ ↓
+postCommit exit 0
+ ↓
+Build Complete
+ ↓
+imagem publicada
+```
+
+E o cenário de falha:
+
+```text
+imagem construída
+ ↓
+postCommit exit != 0
+ ↓
+Build Failed
+ ↓
+imagem não publicada
+```
+
+### Recapitulação prática — aplicação `tasks`
 
 ```text
 Git
  ↓
 BuildConfig/tasks
  ↓
-Build/tasks-1
+Build/tasks-N
  ↓
 ImageStreamTag tasks:latest
  ↓
@@ -396,45 +428,26 @@ Service/tasks
 Route/tasks
 ```
 
-Também foi configurado o ImageChange trigger do Deployment:
+A Route utiliza TLS termination `edge` e `Redirect` para HTTP. O Deployment acompanha `tasks:latest` através de ImageChange trigger.
+
+---
+
+# Próxima etapa
+
+## Fase 4 — Source-to-Image (S2I)
+
+Próximo bloco de estudo:
 
 ```text
-tasks:latest recebe novo digest
+builder image
  ↓
-ImageChange trigger
+source Git
  ↓
-Deployment atualizado
+S2I build
  ↓
-novo ReplicaSet
+ImageStream
  ↓
-novo Pod
+Deployment
 ```
 
-A Route foi criada com TLS termination `edge` e `Redirect` para requisições HTTP.
-
-Esse exercício foi tratado como recapitulação prática / mini-simulado. Os itens de simulados formais permanecem pendentes até serem executados de forma cronometrada e sem intervenção.
-
-Próximos tópicos:
-
-```text
-ImageChange trigger no BuildConfig
-Cancelamento e reinício de Builds
-Build hooks
-Post-commit hooks
-```
-
-Próximo experimento:
-
-```text
-python-311:latest muda
- ↓
-ImageChange trigger do BuildConfig
- ↓
-novo Build de vote
- ↓
-vote:latest muda
- ↓
-ImageChange trigger do Deployment
- ↓
-rollout automático
-```
+O objetivo será entender o fluxo S2I, identificar builder images, criar builds, customizar scripts quando necessário e comparar S2I com Docker/Containerfile strategy.
