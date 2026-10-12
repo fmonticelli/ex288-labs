@@ -23,10 +23,12 @@ Legenda:
 - [02 — Container Images](topics/02-container-images/)
 - [03 — BuildConfig e Builds](topics/03-buildconfig-builds/)
 - [04 — ImageStreams](topics/04-imagestreams/)
+- [S2I — aplicação prática](s2i-python/)
+- [S2I — troubleshooting prático](s2i-troubleshooting/)
 - [08 — Deployments e aplicações](topics/08-deployments-applications/)
 - [09 — Troubleshooting](topics/09-troubleshooting/)
 
-O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `topics/` guardam conceitos, comandos, exercícios, validações e troubleshooting realizados durante os laboratórios.
+O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `topics/` guardam conceitos, comandos, exercícios, validações e troubleshooting realizados durante os laboratórios. Os diretórios `s2i-python/` e `s2i-troubleshooting/` guardam os exercícios práticos realizados no bloco de Source-to-Image.
 
 <!-- TOPICS_INDEX_END -->
 
@@ -80,7 +82,7 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Build Run Policy: `Serial`, `Parallel` e `SerialLatestOnly`
 - ✅ Post-commit build hook
 - 🟡 Custom builder
-- 🟡 Troubleshooting de builds
+- ✅ Troubleshooting de builds
 
 ## 4. ImageStreams
 
@@ -96,13 +98,22 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 
 ## 5. Source-to-Image (S2I)
 
-- ⬜ Entender o fluxo S2I
-- ⬜ Identificar builder images
-- ⬜ Criar builds S2I
-- ⬜ Deployar aplicações construídas com S2I
-- ⬜ Customizar scripts S2I
-- ⬜ Comparar S2I e Containerfile builds
-- ⬜ Troubleshooting de S2I
+- ✅ Entender o fluxo S2I
+- ✅ Identificar builder images
+- ✅ Criar builds S2I
+- ✅ Utilizar `sourceStrategy`
+- ✅ Deployar aplicações construídas com S2I
+- ✅ Entender `assemble` como etapa de build
+- ✅ Entender `run` como etapa de runtime
+- ✅ Customizar `.s2i/bin/assemble`
+- ✅ Customizar `.s2i/bin/run`
+- ✅ Comparar S2I e Containerfile/Docker strategy
+- ✅ Troubleshooting de S2I
+- ✅ Diagnosticar dependência inválida durante `assemble`
+- ✅ Diagnosticar custom `assemble` com erro de permissão
+- ✅ Diagnosticar custom `run` com Build `Complete` e Pod falhando
+- 🟡 `save-artifacts` / incremental build
+- 🟡 Automatizar rollout após build com ImageChange trigger no Deployment
 
 ## 6. ConfigMaps e Secrets
 
@@ -134,8 +145,11 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Criar Deployment
 - ✅ Atualizar aplicações
 - ✅ Acompanhar rollouts
+- 🟡 Configurar ImageChange trigger no Deployment com naturalidade
 - 🟡 Consultar histórico de rollout
 - ⬜ Executar rollback
+- ⬜ Configurar estratégia `RollingUpdate`
+- ⬜ Configurar estratégia `Recreate`
 - ✅ Criar Service
 - ✅ Criar Route
 - ✅ Validar aplicação ponta a ponta
@@ -144,19 +158,19 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 
 - ✅ `oc get`
 - ✅ `oc describe`
-- 🟡 `oc logs`
-- ⬜ `oc logs -p`
+- ✅ `oc logs`
+- ✅ `oc logs --previous`
 - ⬜ `oc exec`
 - 🟡 Consultar Events
 - ⬜ Diagnosticar `Pending`
-- ⬜ Diagnosticar `CrashLoopBackOff`
+- ✅ Diagnosticar `CrashLoopBackOff` / container reiniciando
 - ⬜ Diagnosticar `ImagePullBackOff`
-- ⬜ Diagnosticar falhas de Deployment
+- 🟡 Diagnosticar falhas de Deployment
 - ⬜ Diagnosticar Services
 - ⬜ Diagnosticar Routes
-- 🟡 Diagnosticar Builds
+- ✅ Diagnosticar Builds
 - 🟡 Diagnosticar ImageStreams
-- ⬜ Diagnosticar problemas de configuração
+- 🟡 Diagnosticar problemas de configuração
 
 ## 10. OpenShift Templates
 
@@ -261,6 +275,27 @@ ex288-labs/
 │   └── server.js
 ├── mindmap/
 │   └── README.md
+├── s2i-python/
+│   ├── app.py
+│   └── requirements.txt
+├── s2i-troubleshooting/
+│   ├── 01-broken-requirements/
+│   │   ├── app.py
+│   │   ├── requirements.txt
+│   │   ├── README.md
+│   │   └── versions/
+│   ├── 02-broken-assemble/
+│   │   ├── .s2i/bin/assemble
+│   │   ├── app.py
+│   │   ├── requirements.txt
+│   │   ├── README.md
+│   │   └── versions/
+│   └── 03-broken-run/
+│       ├── .s2i/bin/run
+│       ├── app.py
+│       ├── requirements.txt
+│       ├── README.md
+│       └── versions/
 ├── tasks/
 │   ├── Dockerfile
 │   ├── app.py
@@ -322,132 +357,168 @@ atualizar mindmap
 
 # Etapa atual
 
-## Fase 3 — BuildConfig e Builds
+## Fase 4 — Source-to-Image (S2I)
 
 Status:
 
 ```text
-✅ Conteúdo principal concluído
-🟡 Custom Builder: revisar execução com uma builder image real
+✅ Núcleo S2I concluído
+✅ Build S2I com sourceStrategy
+✅ Custom assemble e custom run
+✅ Troubleshooting S2I prático
+🟡 save-artifacts / incremental build
+🟡 ImageChange trigger no Deployment: reforçar hábito operacional
 ```
 
-### Fluxo de build validado
+### Fluxo S2I validado
 
 ```text
-Git
- ↓
+Git source
+    +
+Builder Image
+    ↓
 BuildConfig
- ↓
+sourceStrategy
+    ↓
 Build
- ↓
+    ↓
+assemble
+    ↓
 ImageStreamTag
- ↓
-Registry interno
-```
-
-### ImageChange encadeado validado
-
-```text
-ImageStreamTag da imagem-base muda
- ↓
-ImageChange trigger do BuildConfig
- ↓
-novo Build automático
- ↓
-ImageStreamTag da aplicação muda
- ↓
-ImageChange trigger do Deployment
- ↓
-novo ReplicaSet / Pod
-```
-
-O fluxo foi validado utilizando `python-base-lab:latest`, alternando entre imagens Python 3.11 e 3.12. A alteração de digest disparou automaticamente `tasks-12` e `tasks-13`, sem `oc start-build` manual.
-
-### Operações de Build praticadas
-
-```text
-oc start-build
-oc start-build --follow
-oc cancel-build
-oc cancel-build --restart
-oc start-build --from-build
-```
-
-Também foram praticados:
-
-- `successfulBuildsHistoryLimit`
-- `oc edit bc/...` e `oc patch bc/...`
-- `Serial`, `Parallel` e `SerialLatestOnly`
-- `postCommit` com sucesso e falha intencional
-- configuração de `customStrategy`
-- webhook e troubleshooting de RBAC
-
-### Post-commit validado
-
-```text
-imagem construída
- ↓
-postCommit exit 0
- ↓
-Build Complete
- ↓
-imagem publicada
-```
-
-E o cenário de falha:
-
-```text
-imagem construída
- ↓
-postCommit exit != 0
- ↓
-Build Failed
- ↓
-imagem não publicada
-```
-
-### Recapitulação prática — aplicação `tasks`
-
-```text
-Git
- ↓
-BuildConfig/tasks
- ↓
-Build/tasks-N
- ↓
-ImageStreamTag tasks:latest
- ↓
-Deployment/tasks
- ↓
-ReplicaSet
- ↓
+    ↓
+Deployment
+    ↓
+run
+    ↓
 Pod
- ↓
-Service/tasks
- ↓
-Route/tasks
 ```
 
-A Route utiliza TLS termination `edge` e `Redirect` para HTTP. O Deployment acompanha `tasks:latest` através de ImageChange trigger.
+### Diferença fundamental
+
+```text
+assemble
+→ build time
+→ falha normalmente deixa Build Failed
+
+run
+→ runtime
+→ Build pode ficar Complete e o Pod falhar depois
+```
+
+### Troubleshooting S2I praticado
+
+#### Cenário 01 — requirements inválido
+
+```text
+Flask==99.99.99
+    ↓
+/usr/libexec/s2i/assemble
+    ↓
+pip falha
+    ↓
+Build Failed
+```
+
+Diagnóstico:
+
+```bash
+oc get build -l app=s2i-broken-deps
+oc logs build/s2i-broken-deps-1
+```
+
+Correção validada com novo Build `Complete`.
+
+#### Cenário 02 — custom assemble com erro de permissão
+
+```text
+.s2i/bin/assemble
+    ↓
+RUN /tmp/scripts/assemble
+    ↓
+USER 1001 tenta gravar em /root
+    ↓
+Permission denied
+    ↓
+Build Failed
+```
+
+Foi identificado que o script customizado do source substituiu o comportamento padrão do `assemble`.
+
+#### Cenário 03 — custom run quebrado
+
+```text
+Build Complete
+    ↓
+Deployment
+    ↓
+container inicia
+    ↓
+.s2i/bin/run
+    ↓
+missing.py não existe
+    ↓
+container reinicia
+```
+
+Diagnóstico realizado com:
+
+```bash
+oc logs --previous pod/<pod>
+```
+
+Após corrigir `missing.py` para `app.py`, gerar novo build e executar novo rollout, a aplicação permaneceu em execução.
+
+### Trigger de Deployment — ponto de reforço
+
+Foi reforçada a diferença entre:
+
+```bash
+oc rollout restart deployment/<nome>
+```
+
+e:
+
+```bash
+oc set triggers deployment/<nome> \
+  --from-image=<imagestream>:latest \
+  -c <container>
+```
+
+```text
+rollout restart
+→ cria novos Pods agora
+
+ImageChange trigger
+→ configura rollout automático quando a ImageStreamTag mudar
+```
+
+Para recuperar sintaxe durante a prática:
+
+```bash
+oc set --help
+oc set triggers --help
+```
 
 ---
 
 # Próxima etapa
 
-## Fase 4 — Source-to-Image (S2I)
+## Fase 5 — Deployments avançados
 
 Próximo bloco de estudo:
 
 ```text
-builder image
- ↓
-source Git
- ↓
-S2I build
- ↓
-ImageStream
- ↓
-Deployment
+RollingUpdate / Recreate
+        ↓
+rollout history
+        ↓
+rollback
+        ↓
+probes
+        ↓
+requests / limits
+        ↓
+stateful / persistência
 ```
 
-O objetivo será entender o fluxo S2I, identificar builder images, criar builds, customizar scripts quando necessário e comparar S2I com Docker/Containerfile strategy.
+O próximo objetivo é aprender a controlar e diagnosticar o ciclo de vida de uma aplicação depois que a imagem já está pronta, incluindo estratégias de rollout, rollback e falhas de saúde da aplicação.

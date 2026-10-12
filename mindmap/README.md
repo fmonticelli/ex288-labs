@@ -2,7 +2,7 @@
 
 [← Voltar para o README principal](../README.md)
 
-Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos do OpenShift se conectam** e fornecer atalhos para os capítulos técnicos do repositório.
+Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos do OpenShift se conectam** e fornecer atalhos para os capítulos técnicos e laboratórios do repositório.
 
 ## Navegação rápida
 
@@ -12,19 +12,28 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | Container Images | ✅ / 🟡 multi-stage | [Abrir](../topics/02-container-images/) |
 | BuildConfig e Builds | ✅ / 🟡 custom builder | [Abrir](../topics/03-buildconfig-builds/) |
 | ImageStreams | ✅ / 🟡 troubleshooting | [Abrir](../topics/04-imagestreams/) |
-| S2I | ⬜ próximo | README técnico será criado ao iniciar |
-| Deployments e aplicações | ✅ / 🟡 rollout history | [Abrir](../topics/08-deployments-applications/) |
-| Troubleshooting | 🟡 | [Abrir](../topics/09-troubleshooting/) |
+| S2I | ✅ / 🟡 incremental + trigger habit | [Labs](../s2i-troubleshooting/) |
+| Deployments e aplicações | ✅ base / 🟡 avançado | [Abrir](../topics/08-deployments-applications/) |
+| Troubleshooting | 🟡 em evolução | [Abrir](../topics/09-troubleshooting/) |
 
 ## Visão geral do fluxo já praticado
 
 ```mermaid
 flowchart LR
     GIT[Git / Source] --> BC[BuildConfig]
+
     BASE[ImageStreamTag<br/>imagem-base] -->|ImageChange| BC
-    BC --> BUILD[Build]
+
+    BC --> STRAT{Strategy}
+    STRAT -->|Docker| DOCKER[Docker / Containerfile build]
+    STRAT -->|Source| S2I[S2I build]
+
+    DOCKER --> BUILD[Build]
+    S2I --> BUILD
+
     BUILD --> APPIS[ImageStreamTag<br/>da aplicação]
     APPIS -->|ImageChange| DEPLOY[Deployment]
+
     DEPLOY --> RS[ReplicaSet]
     RS --> POD[Pod]
     POD --> SVC[Service]
@@ -35,7 +44,7 @@ flowchart LR
     REG --> APPIS
 ```
 
-### Fluxo automático que já foi validado
+### Fluxo automático já validado
 
 ```text
 imagem-base muda de digest
@@ -76,6 +85,7 @@ mindmap
       Git source
       contextDir
       Docker strategy
+      Source strategy / S2I
       Output ImageStreamTag
       Triggers
         ConfigChange
@@ -100,26 +110,44 @@ mindmap
       Digest imutável
       Registry interno
       ImageChange
-    Deployments ✅
-      Deployment
-      ReplicaSet
-      Pod
-      Service
-      Route
-      ImageChange rollout
-    Troubleshooting 🟡
-      get
-      describe
-      logs
-      Events
-      Build failures
-      ImageStream / digest
-    S2I ⬜
+    S2I ✅
       Builder image
-      Source
-      Assemble
-      Run
-      Custom scripts
+      sourceStrategy
+      Git source
+      assemble
+        build time
+        requirements
+        custom assemble
+      run
+        runtime
+        custom run
+      save-artifacts 🟡
+      Troubleshooting
+        dependency failure
+        permission failure
+        CrashLoopBackOff
+    Deployments
+      Deployment ✅
+      ReplicaSet ✅
+      Pod ✅
+      Service ✅
+      Route ✅
+      ImageChange trigger 🟡 hábito
+      Rollout history 🟡
+      Rollback ⬜
+      RollingUpdate ⬜
+      Recreate ⬜
+      Probes ⬜
+    Troubleshooting 🟡
+      get ✅
+      describe ✅
+      logs ✅
+      logs --previous ✅
+      exec ⬜
+      Events 🟡
+      Build failures ✅
+      CrashLoopBackOff ✅
+      ImagePullBackOff ⬜
 ```
 
 ---
@@ -136,8 +164,11 @@ flowchart TD
 
     BC --> STRAT[Strategy]
     STRAT --> DOCKER[Docker / Containerfile]
+    STRAT --> SOURCE[Source / S2I]
     STRAT --> CUSTOM[Custom Strategy 🟡]
-    STRAT -. próximo .-> S2I[S2I]
+
+    SOURCE --> BUILDER[Builder Image]
+    SOURCE --> ASSEMBLE[assemble]
 
     BC --> TRIG[Triggers]
     TRIG --> CONFIG[ConfigChange]
@@ -166,6 +197,14 @@ flowchart TD
 
 ```bash
 oc new-build --name <nome> -l app=<nome> --strategy=docker <git-url> --context-dir=<dir>
+
+oc new-build \
+  --name=<nome> \
+  --strategy=source \
+  --image-stream=<builder>:latest \
+  --context-dir=<dir> \
+  <git-url>
+
 oc get bc
 oc describe bc <nome>
 oc set triggers bc/<nome>
@@ -175,6 +214,82 @@ oc cancel-build <build> --restart
 oc start-build --from-build=<build>
 oc set build-hook bc/<nome> --post-commit --script='<comando>'
 oc edit bc/<nome>
+```
+
+---
+
+## S2I — modelo mental
+
+```mermaid
+flowchart TD
+    GIT[Git source] --> BC[BuildConfig<br/>sourceStrategy]
+    BUILDER[Builder Image] --> BC
+
+    BC --> BUILD[Build]
+
+    BUILD --> SCRIPTSEL{Scripts S2I}
+
+    SCRIPTSEL -->|source customizado| CUSTOM[.s2i/bin/*]
+    SCRIPTSEL -->|fallback| DEFAULT[/usr/libexec/s2i/*]
+
+    CUSTOM --> ASSEMBLE[assemble]
+    DEFAULT --> ASSEMBLE
+
+    ASSEMBLE --> OUT[ImageStreamTag]
+    OUT --> DEPLOY[Deployment]
+
+    DEPLOY --> POD[Pod]
+    POD --> RUN[run]
+```
+
+### Regra central
+
+```text
+assemble
+→ executa durante o Build
+→ exit != 0 normalmente resulta em Build Failed
+
+run
+→ executa no container
+→ pode existir Build Complete + Pod quebrado
+```
+
+### Como identificar qual `assemble` foi usado
+
+```text
+RUN /usr/libexec/s2i/assemble
+→ script padrão da builder
+
+RUN /tmp/scripts/assemble
+→ script customizado vindo do source
+```
+
+### Labs de troubleshooting realizados
+
+```mermaid
+flowchart LR
+    A[01 requirements inválido] --> A1[assemble falha]
+    A1 --> A2[Build Failed]
+
+    B[02 custom assemble] --> B1[USER 1001]
+    B1 --> B2[gravação em /root]
+    B2 --> B3[Permission denied]
+    B3 --> B4[Build Failed]
+
+    C[03 custom run] --> C1[Build Complete]
+    C1 --> C2[Pod inicia]
+    C2 --> C3[missing.py]
+    C3 --> C4[container reinicia]
+```
+
+Comandos usados no diagnóstico:
+
+```bash
+oc get build -l app=<nome>
+oc logs build/<build>
+oc get pods
+oc logs pod/<pod>
+oc logs --previous pod/<pod>
 ```
 
 ---
@@ -216,7 +331,7 @@ A e B apontam para o mesmo digest
 
 ```mermaid
 flowchart LR
-    IST[ImageStreamTag] -->|ImageChange| DEP[Deployment]
+    IST[ImageStreamTag] -->|ImageChange trigger| DEP[Deployment]
     DEP --> RS1[ReplicaSet atual]
     DEP -. histórico .-> RS0[ReplicaSet antigo<br/>replicas=0]
     RS1 --> POD[Pod]
@@ -231,8 +346,29 @@ Comandos-chave:
 oc create deployment <nome> --image=<imagem>
 oc expose deployment <nome> --port=8080 --target-port=8080
 oc create route edge --service=<nome> --insecure-policy=Redirect
+
+oc set triggers deployment/<nome>
 oc set triggers deployment/<nome> --from-image=<imagestream>:latest -c <container>
+
+oc rollout restart deployment/<nome>
 oc rollout history deployment/<nome>
+```
+
+### Trigger x restart
+
+```text
+oc rollout restart
+→ força novos Pods agora
+
+oc set triggers ... --from-image=...
+→ configura rollout automático para futuras mudanças da ImageStreamTag
+```
+
+Se a sintaxe não vier de memória:
+
+```bash
+oc set --help
+oc set triggers --help
 ```
 
 Observação já validada: ao omitir o nome em `oc create route edge --service=<service>`, a Route pode usar o nome do Service.
@@ -243,18 +379,20 @@ Observação já validada: ao omitir o nome em `oc create route edge --service=<
 
 ```mermaid
 flowchart TD
-    START[Aplicação não funciona] --> GET[oc get]
-    GET --> DESCRIBE[oc describe]
-    DESCRIBE --> EVENTS[Events / Conditions]
-    EVENTS --> LOGS[oc logs]
+    START[Aplicação não funciona] --> BUILDQ{Build completou?}
 
-    LOGS --> BUILDQ{Problema no build?}
-    BUILDQ -->|sim| BC[BuildConfig / Build / ImageStream]
-    BUILDQ -->|não| PODQ{Pod saudável?}
+    BUILDQ -->|não| BLOG[oc logs build/...]
+    BLOG --> ASSEMBLEQ{Falha no assemble?}
+    ASSEMBLEQ -->|sim| SOURCE[dependências / scripts S2I / permissões]
+    ASSEMBLEQ -->|não| BOTHER[Git / builder / output / registry]
 
-    PODQ -->|não| POD[Pod / probes / imagem / config]
+    BUILDQ -->|sim| PODQ{Pod fica Running?}
+
+    PODQ -->|não| PLOG[oc logs pod/...]
+    PLOG --> PREV[oc logs --previous pod/...]
+    PREV --> RUNTIME[run / config / probes / imagem]
+
     PODQ -->|sim| SVCQ{Service seleciona o Pod?}
-
     SVCQ -->|não| LABELS[labels / selectors / endpoints]
     SVCQ -->|sim| ROUTEQ{Route chega no Service?}
 
@@ -266,28 +404,42 @@ Casos reais já encontrados nos labs:
 
 - `BuildConfigInstantiateFailed` enquanto uma imagem-base ainda não estava resolvida.
 - webhook chegando como `system:anonymous` e falhando por RBAC.
-- `tasks:latest`/`vote:latest` atualizado enquanto o Pod continuava com digest antigo.
+- `ImageStreamTag` atualizado enquanto o Pod continuava com imagem antiga.
 - `imagePullPolicy: Always` não provoca rollout sozinho.
 - `contextDir` define contexto de build, não filtra eventos do webhook por caminho.
 - `postCommit` com exit code diferente de zero faz o Build falhar.
+- `requirements.txt` inválido causando falha no `assemble`.
+- custom `assemble` tentando gravar em `/root` como `USER 1001`.
+- custom `run` apontando para arquivo inexistente e causando reinício do container.
+- `oc logs --previous` para recuperar logs da execução anterior de um container.
 
 ---
 
-## Próximo ramo: S2I
+## Próximo ramo: Deployments avançados
 
 ```mermaid
 flowchart LR
-    GIT[Git source] --> S2I[S2I Build]
-    BUILDER[Builder Image] --> S2I
-    S2I --> OUT[ImageStreamTag]
-    OUT --> DEPLOY[Deployment]
+    DEP[Deployment] --> STRAT[Deployment Strategy]
+    STRAT --> ROLLING[RollingUpdate]
+    STRAT --> RECREATE[Recreate]
 
-    S2I -. estudar .-> ASSEMBLE[assemble]
-    S2I -. estudar .-> RUN[run]
-    S2I -. estudar .-> SCRIPTS[custom scripts]
+    DEP --> HIST[rollout history]
+    HIST --> ROLLBACK[rollback]
+
+    DEP --> HEALTH[Health]
+    HEALTH --> READY[readiness]
+    HEALTH --> LIVE[liveness]
+    HEALTH --> STARTUP[startup]
+
+    DEP --> RES[Resources]
+    RES --> REQUESTS[requests]
+    RES --> LIMITS[limits]
+
+    DEP --> STATE[Stateful]
+    STATE --> PVC[PVC / persistência]
 ```
 
-Quando S2I começar, será criado o capítulo correspondente em `topics/` e este mapa será expandido.
+Próximo objetivo: controlar o comportamento do Deployment durante atualizações e falhas, em vez de apenas criar a aplicação.
 
 ---
 
@@ -302,6 +454,6 @@ README raiz
 mindmap/README.md
 → atualizar relações e fluxos
 
-topics/XX-*/README.md
+topics/XX-*/README.md ou lab equivalente
 → registrar comandos, exemplos e troubleshooting
 ```
