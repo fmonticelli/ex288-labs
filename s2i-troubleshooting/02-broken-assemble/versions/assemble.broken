@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+
+echo "Running custom assemble..."
+
+cp -a /tmp/src/. /opt/app-root/src/
+
+echo "Creating build cache..."
+mkdir -p /root/ex288-cache
+
+pip install --no-cache-dir -r /opt/app-root/src/requirements.txt
