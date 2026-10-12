@@ -229,8 +229,8 @@ flowchart TD
 
     BUILD --> SCRIPTSEL{Scripts S2I}
 
-    SCRIPTSEL -->|source customizado| CUSTOM[.s2i/bin/*]
-    SCRIPTSEL -->|fallback| DEFAULT[/usr/libexec/s2i/*]
+    SCRIPTSEL -->|source customizado| CUSTOM[".s2i/bin/assemble (source)"]
+    SCRIPTSEL -->|fallback| DEFAULT["/usr/libexec/s2i/assemble (builder)"]
 
     CUSTOM --> ASSEMBLE[assemble]
     DEFAULT --> ASSEMBLE
