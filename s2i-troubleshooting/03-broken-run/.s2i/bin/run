@@ -4,4 +4,4 @@ set -e
 
 echo "Starting application with custom S2I run script..."
 
-exec python /opt/app-root/src/missing.py
+exec python /opt/app-root/src/app.py
