@@ -28,7 +28,7 @@ Legenda:
 - [08 — Deployments e aplicações](topics/08-deployments-applications/)
 - [09 — Troubleshooting](topics/09-troubleshooting/)
 
-O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `topics/` guardam conceitos, comandos, exercícios, validações e troubleshooting realizados durante os laboratórios. Os diretórios `s2i-python/` e `s2i-troubleshooting/` guardam os exercícios práticos realizados no bloco de Source-to-Image.
+O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `topics/` guardam conceitos, comandos, exercícios, validações e troubleshooting realizados durante os laboratórios.
 
 <!-- TOPICS_INDEX_END -->
 
@@ -146,10 +146,15 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Atualizar aplicações
 - ✅ Acompanhar rollouts
 - 🟡 Configurar ImageChange trigger no Deployment com naturalidade
-- 🟡 Consultar histórico de rollout
-- ⬜ Executar rollback
-- ⬜ Configurar estratégia `RollingUpdate`
-- ⬜ Configurar estratégia `Recreate`
+- ✅ Consultar histórico de rollout
+- ✅ Inspecionar revisão específica
+- ✅ Executar rollback
+- ✅ Configurar estratégia `RollingUpdate`
+- ✅ Configurar estratégia `Recreate`
+- ✅ Entender `maxSurge`
+- ✅ Entender `maxUnavailable`
+- ✅ Entender `revisionHistoryLimit`
+- ✅ Entender `progressDeadlineSeconds`
 - ✅ Criar Service
 - ✅ Criar Route
 - ✅ Validar aplicação ponta a ponta
@@ -160,12 +165,12 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ `oc describe`
 - ✅ `oc logs`
 - ✅ `oc logs --previous`
-- ⬜ `oc exec`
+- ✅ `oc exec`
 - 🟡 Consultar Events
 - ⬜ Diagnosticar `Pending`
 - ✅ Diagnosticar `CrashLoopBackOff` / container reiniciando
-- ⬜ Diagnosticar `ImagePullBackOff`
-- 🟡 Diagnosticar falhas de Deployment
+- ✅ Diagnosticar `ImagePullBackOff`
+- ✅ Diagnosticar falhas de Deployment / rollout
 - ⬜ Diagnosticar Services
 - ⬜ Diagnosticar Routes
 - ✅ Diagnosticar Builds
@@ -263,64 +268,6 @@ Repositório de estudos:
 ex288-labs
 ```
 
-Estrutura atual:
-
-```text
-ex288-labs/
-├── README.md
-├── .gitignore
-├── hello/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── server.js
-├── mindmap/
-│   └── README.md
-├── s2i-python/
-│   ├── app.py
-│   └── requirements.txt
-├── s2i-troubleshooting/
-│   ├── 01-broken-requirements/
-│   │   ├── app.py
-│   │   ├── requirements.txt
-│   │   ├── README.md
-│   │   └── versions/
-│   ├── 02-broken-assemble/
-│   │   ├── .s2i/bin/assemble
-│   │   ├── app.py
-│   │   ├── requirements.txt
-│   │   ├── README.md
-│   │   └── versions/
-│   └── 03-broken-run/
-│       ├── .s2i/bin/run
-│       ├── app.py
-│       ├── requirements.txt
-│       ├── README.md
-│       └── versions/
-├── tasks/
-│   ├── Dockerfile
-│   ├── app.py
-│   └── requirements.txt
-├── topics/
-│   ├── 01-openshift-git/
-│   │   └── README.md
-│   ├── 02-container-images/
-│   │   └── README.md
-│   ├── 03-buildconfig-builds/
-│   │   └── README.md
-│   ├── 04-imagestreams/
-│   │   └── README.md
-│   ├── 08-deployments-applications/
-│   │   └── README.md
-│   └── 09-troubleshooting/
-│       └── README.md
-└── vote/
-    ├── app.py
-    ├── Dockerfile
-    └── requirements.txt
-```
-
-As aplicações, manifests e demais artefatos serão adicionados conforme os tópicos forem estudados.
-
 ---
 
 # Metodologia
@@ -357,168 +304,123 @@ atualizar mindmap
 
 # Etapa atual
 
-## Fase 4 — Source-to-Image (S2I)
+## Fase 5 — Deployments avançados
 
 Status:
 
 ```text
-✅ Núcleo S2I concluído
-✅ Build S2I com sourceStrategy
-✅ Custom assemble e custom run
-✅ Troubleshooting S2I prático
-🟡 save-artifacts / incremental build
+✅ RollingUpdate
+✅ Recreate
+✅ rollout history
+✅ inspeção de revision
+✅ rollback
+✅ maxSurge / maxUnavailable
+✅ revisionHistoryLimit
+✅ progressDeadlineSeconds
+✅ troubleshooting de ImagePullBackOff
+✅ oc exec
 🟡 ImageChange trigger no Deployment: reforçar hábito operacional
 ```
 
-### Fluxo S2I validado
+### Fluxo de rollout validado
 
 ```text
-Git source
-    +
-Builder Image
-    ↓
-BuildConfig
-sourceStrategy
-    ↓
-Build
-    ↓
-assemble
-    ↓
-ImageStreamTag
-    ↓
-Deployment
-    ↓
-run
-    ↓
-Pod
+PodTemplate muda
+      ↓
+Deployment cria nova revision
+      ↓
+novo ReplicaSet
+      ↓
+novos Pods
 ```
 
-### Diferença fundamental
+### RollingUpdate validado
+
+Com uma imagem propositalmente inexistente:
 
 ```text
-assemble
-→ build time
-→ falha normalmente deixa Build Failed
-
-run
-→ runtime
-→ Build pode ficar Complete e o Pod falhar depois
+Pod antigo
+1/1 Running
+      +
+Pod novo
+0/1 ImagePullBackOff
 ```
 
-### Troubleshooting S2I praticado
+O Pod saudável antigo permaneceu disponível enquanto o novo não ficou Ready.
 
-#### Cenário 01 — requirements inválido
+### Recreate validado
+
+Com a mesma falha:
 
 ```text
-Flask==99.99.99
-    ↓
-/usr/libexec/s2i/assemble
-    ↓
-pip falha
-    ↓
-Build Failed
+Pod antigo
+→ removido
+
+Pod novo
+→ ImagePullBackOff
 ```
 
-Diagnóstico:
+A aplicação ficou sem instância saudável, deixando claro o risco de downtime da estratégia `Recreate`.
+
+### Rollback validado
+
+Foi identificada a revisão quebrada com:
 
 ```bash
-oc get build -l app=s2i-broken-deps
-oc logs build/s2i-broken-deps-1
+oc rollout history deployment/s2i-broken-run --revision=4
 ```
 
-Correção validada com novo Build `Complete`.
+e executado rollback explícito:
 
-#### Cenário 02 — custom assemble com erro de permissão
+```bash
+oc rollout undo deployment/s2i-broken-run --to-revision=3
+```
+
+O PodTemplate saudável da revisão antiga foi reaplicado como uma nova revisão.
+
+### Campos de Deployment estudados
 
 ```text
-.s2i/bin/assemble
-    ↓
-RUN /tmp/scripts/assemble
-    ↓
-USER 1001 tenta gravar em /root
-    ↓
-Permission denied
-    ↓
-Build Failed
+maxSurge
+→ quantidade extra de Pods permitida durante RollingUpdate
+
+maxUnavailable
+→ quantidade de Pods que pode ficar indisponível durante RollingUpdate
+
+revisionHistoryLimit
+→ quantidade máxima de ReplicaSets antigos preservados
+
+progressDeadlineSeconds
+→ tempo limite para detectar rollout sem progresso
+→ não executa rollback automático
 ```
 
-Foi identificado que o script customizado do source substituiu o comportamento padrão do `assemble`.
+Documentação detalhada:
 
-#### Cenário 03 — custom run quebrado
-
-```text
-Build Complete
-    ↓
-Deployment
-    ↓
-container inicia
-    ↓
-.s2i/bin/run
-    ↓
-missing.py não existe
-    ↓
-container reinicia
-```
-
-Diagnóstico realizado com:
-
-```bash
-oc logs --previous pod/<pod>
-```
-
-Após corrigir `missing.py` para `app.py`, gerar novo build e executar novo rollout, a aplicação permaneceu em execução.
-
-### Trigger de Deployment — ponto de reforço
-
-Foi reforçada a diferença entre:
-
-```bash
-oc rollout restart deployment/<nome>
-```
-
-e:
-
-```bash
-oc set triggers deployment/<nome> \
-  --from-image=<imagestream>:latest \
-  -c <container>
-```
-
-```text
-rollout restart
-→ cria novos Pods agora
-
-ImageChange trigger
-→ configura rollout automático quando a ImageStreamTag mudar
-```
-
-Para recuperar sintaxe durante a prática:
-
-```bash
-oc set --help
-oc set triggers --help
-```
+- [08 — Deployments e aplicações](topics/08-deployments-applications/)
 
 ---
 
 # Próxima etapa
 
-## Fase 5 — Deployments avançados
+## Fase 6 — Health Monitoring / Probes
 
-Próximo bloco de estudo:
+Próximo bloco:
 
 ```text
-RollingUpdate / Recreate
-        ↓
-rollout history
-        ↓
-rollback
-        ↓
-probes
-        ↓
-requests / limits
-        ↓
-stateful / persistência
+readinessProbe
+      ↓
+livenessProbe
+      ↓
+startupProbe
+      ↓
+HTTP probes
+      ↓
+exec probes
+      ↓
+timings / thresholds
+      ↓
+troubleshooting de probes
 ```
 
-O próximo objetivo é aprender a controlar e diagnosticar o ciclo de vida de uma aplicação depois que a imagem já está pronta, incluindo estratégias de rollout, rollback e falhas de saúde da aplicação.
+Objetivo: distinguir claramente **Pod rodando**, **Pod pronto para receber tráfego** e **container saudável**, incluindo falhas propositalmente introduzidas para troubleshooting.

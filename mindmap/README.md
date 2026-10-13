@@ -13,20 +13,22 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | BuildConfig e Builds | ✅ / 🟡 custom builder | [Abrir](../topics/03-buildconfig-builds/) |
 | ImageStreams | ✅ / 🟡 troubleshooting | [Abrir](../topics/04-imagestreams/) |
 | S2I | ✅ / 🟡 incremental + trigger habit | [Labs](../s2i-troubleshooting/) |
-| Deployments e aplicações | ✅ base / 🟡 avançado | [Abrir](../topics/08-deployments-applications/) |
+| Deployments e aplicações | ✅ rollout/strategies | [Abrir](../topics/08-deployments-applications/) |
+| Health Monitoring / Probes | ⬜ próximo | Será praticado na próxima etapa |
 | Troubleshooting | 🟡 em evolução | [Abrir](../topics/09-troubleshooting/) |
+
+---
 
 ## Visão geral do fluxo já praticado
 
 ```mermaid
 flowchart LR
     GIT[Git / Source] --> BC[BuildConfig]
-
     BASE[ImageStreamTag<br/>imagem-base] -->|ImageChange| BC
 
-    BC --> STRAT{Strategy}
-    STRAT -->|Docker| DOCKER[Docker / Containerfile build]
-    STRAT -->|Source| S2I[S2I build]
+    BC --> STRAT{Build Strategy}
+    STRAT -->|Docker| DOCKER[Docker / Containerfile]
+    STRAT -->|Source| S2I[S2I]
 
     DOCKER --> BUILD[Build]
     S2I --> BUILD
@@ -42,22 +44,6 @@ flowchart LR
     REG[(Registry interno)]
     BUILD --> REG
     REG --> APPIS
-```
-
-### Fluxo automático já validado
-
-```text
-imagem-base muda de digest
-        ↓
-ImageChange do BuildConfig
-        ↓
-Build automático
-        ↓
-imagem da aplicação muda
-        ↓
-ImageChange do Deployment
-        ↓
-rollout automático
 ```
 
 ---
@@ -78,15 +64,12 @@ mindmap
       Dockerfile
       Layers / cache
       UID arbitrário
-      Grupo 0
-      Healthcheck de imagem
       Multi-stage 🟡
     BuildConfig ✅
       Git source
       contextDir
       Docker strategy
       Source strategy / S2I
-      Output ImageStreamTag
       Triggers
         ConfigChange
         ImageChange
@@ -98,9 +81,6 @@ mindmap
         from-build
       History limits
       Run Policy
-        Serial
-        Parallel
-        SerialLatestOnly
       postCommit
       Custom Builder 🟡
     ImageStreams ✅
@@ -113,107 +93,42 @@ mindmap
     S2I ✅
       Builder image
       sourceStrategy
-      Git source
       assemble
-        build time
-        requirements
-        custom assemble
       run
-        runtime
-        custom run
+      custom scripts
       save-artifacts 🟡
-      Troubleshooting
-        dependency failure
-        permission failure
-        CrashLoopBackOff
-    Deployments
-      Deployment ✅
-      ReplicaSet ✅
-      Pod ✅
-      Service ✅
-      Route ✅
-      ImageChange trigger 🟡 hábito
-      Rollout history 🟡
-      Rollback ⬜
-      RollingUpdate ⬜
-      Recreate ⬜
-      Probes ⬜
+      troubleshooting
+    Deployments ✅
+      Deployment
+      ReplicaSet
+      Pod
+      Service
+      Route
+      RollingUpdate
+      Recreate
+      maxSurge
+      maxUnavailable
+      revisionHistoryLimit
+      progressDeadlineSeconds
+      rollout history
+      rollback
+      ImageChange trigger 🟡
     Troubleshooting 🟡
       get ✅
       describe ✅
       logs ✅
       logs --previous ✅
-      exec ⬜
-      Events 🟡
+      exec ✅
       Build failures ✅
       CrashLoopBackOff ✅
-      ImagePullBackOff ⬜
-```
-
----
-
-## BuildConfig — mapa operacional
-
-```mermaid
-flowchart TD
-    BC[BuildConfig]
-
-    BC --> SRC[Source]
-    SRC --> GIT[Git repository]
-    SRC --> CTX[contextDir]
-
-    BC --> STRAT[Strategy]
-    STRAT --> DOCKER[Docker / Containerfile]
-    STRAT --> SOURCE[Source / S2I]
-    STRAT --> CUSTOM[Custom Strategy 🟡]
-
-    SOURCE --> BUILDER[Builder Image]
-    SOURCE --> ASSEMBLE[assemble]
-
-    BC --> TRIG[Triggers]
-    TRIG --> CONFIG[ConfigChange]
-    TRIG --> IMAGE[ImageChange]
-    TRIG --> WEBHOOK[GitHub / Generic webhook]
-
-    BC --> OPS[Operações]
-    OPS --> START[oc start-build]
-    OPS --> CANCEL[oc cancel-build]
-    OPS --> RESTART[oc cancel-build --restart]
-    OPS --> FROMBUILD[oc start-build --from-build]
-
-    BC --> POLICY[Run Policy]
-    POLICY --> SERIAL[Serial]
-    POLICY --> PARALLEL[Parallel]
-    POLICY --> LATEST[SerialLatestOnly]
-
-    BC --> HISTORY[History limits]
-    HISTORY --> SUCCESS[successfulBuildsHistoryLimit]
-    HISTORY --> FAILED[failedBuildsHistoryLimit]
-
-    BC --> HOOK[postCommit]
-```
-
-### Comandos-chave
-
-```bash
-oc new-build --name <nome> -l app=<nome> --strategy=docker <git-url> --context-dir=<dir>
-
-oc new-build \
-  --name=<nome> \
-  --strategy=source \
-  --image-stream=<builder>:latest \
-  --context-dir=<dir> \
-  <git-url>
-
-oc get bc
-oc describe bc <nome>
-oc set triggers bc/<nome>
-oc start-build <nome> --follow
-oc cancel-build <build>
-oc cancel-build <build> --restart
-oc start-build --from-build=<build>
-oc set build-hook bc/<nome> --post-commit --script='<comando>'
-oc edit bc/<nome>
+      ImagePullBackOff ✅
+      Deployment rollout ✅
+      Events 🟡
+      Pending ⬜
+    Health Monitoring ⬜
+      readiness
+      liveness
+      startup
 ```
 
 ---
@@ -226,7 +141,6 @@ flowchart TD
     BUILDER[Builder Image] --> BC
 
     BC --> BUILD[Build]
-
     BUILD --> SCRIPTSEL{Scripts S2I}
 
     SCRIPTSEL -->|source customizado| CUSTOM[".s2i/bin/assemble (source)"]
@@ -237,92 +151,16 @@ flowchart TD
 
     ASSEMBLE --> OUT[ImageStreamTag]
     OUT --> DEPLOY[Deployment]
-
     DEPLOY --> POD[Pod]
     POD --> RUN[run]
 ```
 
-### Regra central
-
 ```text
 assemble
-→ executa durante o Build
-→ exit != 0 normalmente resulta em Build Failed
+→ build time
 
 run
-→ executa no container
-→ pode existir Build Complete + Pod quebrado
-```
-
-### Como identificar qual `assemble` foi usado
-
-```text
-RUN /usr/libexec/s2i/assemble
-→ script padrão da builder
-
-RUN /tmp/scripts/assemble
-→ script customizado vindo do source
-```
-
-### Labs de troubleshooting realizados
-
-```mermaid
-flowchart LR
-    A[01 requirements inválido] --> A1[assemble falha]
-    A1 --> A2[Build Failed]
-
-    B[02 custom assemble] --> B1[USER 1001]
-    B1 --> B2[gravação em /root]
-    B2 --> B3[Permission denied]
-    B3 --> B4[Build Failed]
-
-    C[03 custom run] --> C1[Build Complete]
-    C1 --> C2[Pod inicia]
-    C2 --> C3[missing.py]
-    C3 --> C4[container reinicia]
-```
-
-Comandos usados no diagnóstico:
-
-```bash
-oc get build -l app=<nome>
-oc logs build/<build>
-oc get pods
-oc logs pod/<pod>
-oc logs --previous pod/<pod>
-```
-
----
-
-## ImageStreams — modelo mental
-
-```mermaid
-flowchart LR
-    EXT[Imagem externa] --> IS[ImageStream]
-    IS --> TAG[ImageStreamTag<br/>ex: tasks:latest]
-    TAG --> DIGEST[Digest<br/>sha256:...]
-    DIGEST --> REG[(Registry)]
-
-    BUILD[Build] -->|publica| TAG
-    TAG -->|ImageChange| DEPLOY[Deployment]
-```
-
-```text
-Tag
-→ ponteiro mutável
-
-Digest
-→ referência imutável de uma imagem específica
-```
-
-Pegadinha já validada:
-
-```text
-oc tag A B
-
-A e B apontam para o mesmo digest
-→ não há mudança real de imagem
-→ não é um bom teste de ImageChange
+→ runtime
 ```
 
 ---
@@ -332,114 +170,288 @@ A e B apontam para o mesmo digest
 ```mermaid
 flowchart LR
     IST[ImageStreamTag] -->|ImageChange trigger| DEP[Deployment]
-    DEP --> RS1[ReplicaSet atual]
-    DEP -. histórico .-> RS0[ReplicaSet antigo<br/>replicas=0]
-    RS1 --> POD[Pod]
+    DEP --> RS[ReplicaSet atual]
+    DEP -. histórico .-> OLD[ReplicaSets antigos<br/>replicas=0]
+    RS --> POD[Pods]
     POD --> SVC[Service]
     SVC --> ROUTE[Route]
     ROUTE --> CLIENT[Cliente]
 ```
 
-Comandos-chave:
+---
 
-```bash
-oc create deployment <nome> --image=<imagem>
-oc expose deployment <nome> --port=8080 --target-port=8080
-oc create route edge --service=<nome> --insecure-policy=Redirect
+## Deployment — estratégia de rollout
 
-oc set triggers deployment/<nome>
-oc set triggers deployment/<nome> --from-image=<imagestream>:latest -c <container>
+```mermaid
+flowchart TD
+    DEP[Deployment] --> STRAT{Strategy}
 
-oc rollout restart deployment/<nome>
-oc rollout history deployment/<nome>
+    STRAT --> ROLLING[RollingUpdate]
+    STRAT --> RECREATE[Recreate]
+
+    ROLLING --> SURGE[maxSurge]
+    ROLLING --> UNAVAIL[maxUnavailable]
+
+    ROLLING --> COEXIST["old + new podem coexistir"]
+    RECREATE --> STOPOLD["remove old primeiro"]
+    STOPOLD --> STARTNEW["depois cria new"]
+
+    DEP --> HISTORY[revisionHistoryLimit]
+    DEP --> DEADLINE[progressDeadlineSeconds]
 ```
 
-### Trigger x restart
+### RollingUpdate
+
+```text
+prioridade
+→ disponibilidade
+
+versão antiga + nova
+→ podem coexistir durante rollout
+```
+
+Exemplo praticado com imagem quebrada:
+
+```text
+old Pod → Running
+new Pod → ImagePullBackOff
+
+resultado
+→ old permaneceu disponível
+```
+
+### Recreate
+
+```text
+prioridade
+→ evitar coexistência entre versões
+
+old Pods
+→ removidos primeiro
+
+new Pods
+→ criados depois
+```
+
+Exemplo praticado com imagem quebrada:
+
+```text
+old Pod → removido
+new Pod → ImagePullBackOff
+
+resultado
+→ aplicação sem instância saudável
+```
+
+---
+
+## `maxSurge` e `maxUnavailable`
+
+```mermaid
+flowchart LR
+    R[replicas desejadas] --> MAX["máximo temporário = replicas + maxSurge"]
+    R --> MIN["mínimo disponível = replicas - maxUnavailable"]
+```
+
+Modelo mental:
+
+```text
+maxSurge
+→ quantos Pods extras posso criar?
+
+maxUnavailable
+→ quantos Pods posso perder temporariamente?
+```
+
+Exemplo estudado:
+
+```yaml
+replicas: 3
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 3
+    maxUnavailable: 2
+```
+
+Resultado permitido:
+
+```text
+máximo temporário
+3 + 3 = 6 Pods
+
+mínimo disponível
+3 - 2 = 1 Pod
+```
+
+`RollingUpdate` não significa obrigatoriamente "um Pod por vez". Com capacidade suficiente, vários Pods novos podem ser criados simultaneamente.
+
+---
+
+## `revisionHistoryLimit`
+
+```text
+revisionHistoryLimit: X
+→ mantém até X ReplicaSets antigos
+→ além do ReplicaSet atual
+```
+
+Exemplo:
+
+```text
+RS atual        replicas > 0
+RS antigo #1   replicas = 0
+RS antigo #2   replicas = 0
+...
+```
+
+Esses ReplicaSets antigos sustentam o histórico e o rollback.
+
+Comandos:
+
+```bash
+oc rollout history deployment/<nome>
+oc rollout history deployment/<nome> --revision=<N>
+```
+
+---
+
+## `progressDeadlineSeconds`
+
+```text
+rollout não progride
+        ↓
+deadline excedido
+        ↓
+ProgressDeadlineExceeded
+```
+
+Importante:
+
+```text
+progressDeadlineSeconds
+→ detecta rollout sem progresso
+→ NÃO faz rollback automático
+```
+
+---
+
+## Rollback — fluxo validado
+
+```mermaid
+flowchart LR
+    BAD[Revision quebrada] --> INSPECT[rollout history --revision=N]
+    INSPECT --> GOOD[Identificar revision saudável]
+    GOOD --> UNDO[rollout undo --to-revision=N]
+    UNDO --> NEWREV[Nova revision com PodTemplate saudável]
+```
+
+Comandos praticados:
+
+```bash
+oc rollout history deployment/s2i-broken-run
+
+oc rollout history   deployment/s2i-broken-run   --revision=4
+
+oc rollout undo   deployment/s2i-broken-run   --to-revision=3
+
+oc rollout status deployment/s2i-broken-run
+```
+
+Pegadinha importante:
+
+```text
+rollback para revision 3
+≠ Deployment passa a ser "revision 3"
+
+o PodTemplate da revision 3
+→ é reaplicado
+→ surge uma nova revision
+```
+
+---
+
+## Troubleshooting — Deployment
+
+```mermaid
+flowchart TD
+    START[Rollout não funciona] --> PODS[oc get pods]
+    PODS --> STATUS{Status}
+
+    STATUS -->|ImagePullBackOff| DESC[oc describe pod]
+    DESC --> IMAGE[imagem / tag / registry]
+
+    STATUS -->|container reiniciando| LOGS[oc logs --previous]
+    LOGS --> RUNTIME[run / config / app]
+
+    START --> RS[oc get rs]
+    RS --> HIST[oc rollout history]
+    HIST --> REV[oc rollout history --revision=N]
+    REV --> UNDO[oc rollout undo]
+```
+
+Comandos já usados na prática:
+
+```bash
+oc get pods -l app=<nome>
+oc get pods -l app=<nome> -w
+oc get rs -l app=<nome>
+oc describe pod <pod>
+oc rollout status deployment/<nome> --timeout=20s
+oc rollout history deployment/<nome>
+oc rollout history deployment/<nome> --revision=<N>
+oc rollout undo deployment/<nome> --to-revision=<N>
+oc exec deployment/<nome> -- <comando>
+```
+
+---
+
+## Trigger x restart
 
 ```text
 oc rollout restart
 → força novos Pods agora
 
 oc set triggers ... --from-image=...
-→ configura rollout automático para futuras mudanças da ImageStreamTag
+→ configura rollout automático quando a ImageStreamTag mudar
 ```
 
-Se a sintaxe não vier de memória:
+Para reconstruir sintaxe:
 
 ```bash
 oc set --help
 oc set triggers --help
 ```
 
-Observação já validada: ao omitir o nome em `oc create route edge --service=<service>`, a Route pode usar o nome do Service.
-
 ---
 
-## Troubleshooting — fluxo de decisão
+## Próximo ramo: Health Monitoring / Probes
 
 ```mermaid
 flowchart TD
-    START[Aplicação não funciona] --> BUILDQ{Build completou?}
+    POD[Pod / Container] --> STARTUP[startupProbe]
+    STARTUP --> LIVE[livenessProbe]
+    STARTUP --> READY[readinessProbe]
 
-    BUILDQ -->|não| BLOG[oc logs build/...]
-    BLOG --> ASSEMBLEQ{Falha no assemble?}
-    ASSEMBLEQ -->|sim| SOURCE[dependências / scripts S2I / permissões]
-    ASSEMBLEQ -->|não| BOTHER[Git / builder / output / registry]
+    READY --> TRAFFIC["entra / sai dos endpoints do Service"]
+    LIVE --> RESTART["reinicia container se necessário"]
 
-    BUILDQ -->|sim| PODQ{Pod fica Running?}
+    READY --> HTTP[HTTP probe]
+    READY --> EXEC[exec probe]
 
-    PODQ -->|não| PLOG[oc logs pod/...]
-    PLOG --> PREV[oc logs --previous pod/...]
-    PREV --> RUNTIME[run / config / probes / imagem]
-
-    PODQ -->|sim| SVCQ{Service seleciona o Pod?}
-    SVCQ -->|não| LABELS[labels / selectors / endpoints]
-    SVCQ -->|sim| ROUTEQ{Route chega no Service?}
-
-    ROUTEQ -->|não| ROUTE[Route / TLS / target]
-    ROUTEQ -->|sim| OK[Fluxo ponta a ponta OK]
+    LIVE --> HTTP2[HTTP probe]
+    LIVE --> EXEC2[exec probe]
 ```
 
-Casos reais já encontrados nos labs:
+Próximo objetivo:
 
-- `BuildConfigInstantiateFailed` enquanto uma imagem-base ainda não estava resolvida.
-- webhook chegando como `system:anonymous` e falhando por RBAC.
-- `ImageStreamTag` atualizado enquanto o Pod continuava com imagem antiga.
-- `imagePullPolicy: Always` não provoca rollout sozinho.
-- `contextDir` define contexto de build, não filtra eventos do webhook por caminho.
-- `postCommit` com exit code diferente de zero faz o Build falhar.
-- `requirements.txt` inválido causando falha no `assemble`.
-- custom `assemble` tentando gravar em `/root` como `USER 1001`.
-- custom `run` apontando para arquivo inexistente e causando reinício do container.
-- `oc logs --previous` para recuperar logs da execução anterior de um container.
-
----
-
-## Próximo ramo: Deployments avançados
-
-```mermaid
-flowchart LR
-    DEP[Deployment] --> STRAT[Deployment Strategy]
-    STRAT --> ROLLING[RollingUpdate]
-    STRAT --> RECREATE[Recreate]
-
-    DEP --> HIST[rollout history]
-    HIST --> ROLLBACK[rollback]
-
-    DEP --> HEALTH[Health]
-    HEALTH --> READY[readiness]
-    HEALTH --> LIVE[liveness]
-    HEALTH --> STARTUP[startup]
-
-    DEP --> RES[Resources]
-    RES --> REQUESTS[requests]
-    RES --> LIMITS[limits]
-
-    DEP --> STATE[Stateful]
-    STATE --> PVC[PVC / persistência]
+```text
+container está executando?
+        ≠
+aplicação está saudável?
+        ≠
+aplicação está pronta para receber tráfego?
 ```
-
-Próximo objetivo: controlar o comportamento do Deployment durante atualizações e falhas, em vez de apenas criar a aplicação.
 
 ---
 
@@ -454,6 +466,6 @@ README raiz
 mindmap/README.md
 → atualizar relações e fluxos
 
-topics/XX-*/README.md ou lab equivalente
+topics/XX-*/README.md
 → registrar comandos, exemplos e troubleshooting
 ```
