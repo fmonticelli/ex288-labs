@@ -130,13 +130,13 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 
 ## 7. Health Monitoring
 
-- ⬜ Entender readiness probe
-- ⬜ Entender liveness probe
-- ⬜ Entender startup probe
-- ⬜ Criar HTTP probes
+- ✅ Entender readiness probe
+- ✅ Entender liveness probe
+- ✅ Entender startup probe
+- ✅ Criar HTTP probes
 - ⬜ Criar exec probes
-- ⬜ Configurar delays e períodos
-- ⬜ Diagnosticar falhas de probes
+- 🟡 Configurar delays, períodos e thresholds sem consulta
+- ✅ Diagnosticar falhas de probes
 
 ## 8. Deployments e aplicações
 
@@ -166,7 +166,7 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ `oc logs`
 - ✅ `oc logs --previous`
 - ✅ `oc exec`
-- 🟡 Consultar Events
+- ✅ Consultar Events
 - ⬜ Diagnosticar `Pending`
 - ✅ Diagnosticar `CrashLoopBackOff` / container reiniciando
 - ✅ Diagnosticar `ImagePullBackOff`
@@ -304,123 +304,175 @@ atualizar mindmap
 
 # Etapa atual
 
-## Fase 5 — Deployments avançados
+## Fase 6 — Health Monitoring / Probes
 
 Status:
 
 ```text
-✅ RollingUpdate
-✅ Recreate
-✅ rollout history
-✅ inspeção de revision
-✅ rollback
-✅ maxSurge / maxUnavailable
-✅ revisionHistoryLimit
-✅ progressDeadlineSeconds
-✅ troubleshooting de ImagePullBackOff
-✅ oc exec
-🟡 ImageChange trigger no Deployment: reforçar hábito operacional
+✅ readinessProbe
+✅ livenessProbe
+✅ startupProbe
+✅ HTTP probes
+✅ troubleshooting de probes
+✅ Running x Ready
+✅ restart de container por liveness
+✅ startup bloqueando liveness/readiness até sucesso
+✅ oc events --for
+🟡 timings / thresholds: reforçar criação sem consulta
+⬜ exec probes
 ```
 
-### Fluxo de rollout validado
+### Readiness validada
+
+Foi configurada uma readiness HTTP saudável em `/health` e depois quebrada propositalmente apontando para um caminho inexistente.
+
+Com a probe quebrada:
 
 ```text
-PodTemplate muda
-      ↓
-Deployment cria nova revision
-      ↓
-novo ReplicaSet
-      ↓
-novos Pods
+Pod
+STATUS=Running
+READY=0/1
+RESTARTS=0
 ```
 
-### RollingUpdate validado
+A aplicação continuou executando, mas o Pod deixou de ficar Ready. Em RollingUpdate, o Pod antigo saudável permaneceu atendendo enquanto o novo Pod não passou na readiness.
 
-Com uma imagem propositalmente inexistente:
+Diagnóstico observado:
 
 ```text
-Pod antigo
-1/1 Running
-      +
-Pod novo
-0/1 ImagePullBackOff
+Readiness probe failed: HTTP probe failed with statuscode: 404
 ```
 
-O Pod saudável antigo permaneceu disponível enquanto o novo não ficou Ready.
+### Liveness validada
 
-### Recreate validado
+A liveness HTTP foi configurada inicialmente em `/health` e depois quebrada propositalmente.
 
-Com a mesma falha:
+Foi observado o mesmo Pod reiniciando seu container:
 
 ```text
-Pod antigo
-→ removido
-
-Pod novo
-→ ImagePullBackOff
+READY alternando entre 0/1 e 1/1
+RESTARTS aumentando
+nome do Pod permanecendo o mesmo
 ```
 
-A aplicação ficou sem instância saudável, deixando claro o risco de downtime da estratégia `Recreate`.
+Events utilizados no diagnóstico:
 
-### Rollback validado
+```text
+Liveness probe failed: HTTP probe failed with statuscode: 404
+Back-off restarting failed container
+```
 
-Foi identificada a revisão quebrada com:
+Regra prática validada:
+
+```text
+readiness falha
+→ não reinicia o container
+→ Pod deixa de ficar Ready
+→ sai do tráfego elegível do Service
+
+liveness falha
+→ kubelet reinicia o container
+→ RESTARTS aumenta
+→ o mesmo Pod continua existindo
+```
+
+### Startup validada
+
+Foi configurada uma startup probe propositalmente quebrada:
+
+```text
+periodSeconds: 5
+failureThreshold: 3
+```
+
+Modelo mental validado:
+
+```text
+startupProbe
+→ testa a inicialização repetidamente
+→ liveness/readiness ficam bloqueadas até sucesso
+→ ao atingir failureThreshold, o container é reiniciado
+→ falhas repetidas podem resultar em CrashLoopBackOff
+```
+
+Os Events mostraram somente falhas de startup enquanto ela não passava:
+
+```text
+Startup probe failed: HTTP probe failed with statuscode: 404
+Container ... failed startup probe, will be restarted
+```
+
+Após corrigir a startup para `/health`, o novo Pod ficou:
+
+```text
+READY 1/1
+STATUS Running
+RESTARTS 0
+```
+
+### Troubleshooting com Events
+
+Comando incorporado ao fluxo de diagnóstico:
 
 ```bash
-oc rollout history deployment/s2i-broken-run --revision=4
+oc events --for pod/<pod>
 ```
 
-e executado rollback explícito:
+Também continuam úteis:
 
 ```bash
-oc rollout undo deployment/s2i-broken-run --to-revision=3
+oc get pods
+oc describe pod <pod>
+oc logs <pod>
+oc logs --previous <pod>
 ```
-
-O PodTemplate saudável da revisão antiga foi reaplicado como uma nova revisão.
-
-### Campos de Deployment estudados
-
-```text
-maxSurge
-→ quantidade extra de Pods permitida durante RollingUpdate
-
-maxUnavailable
-→ quantidade de Pods que pode ficar indisponível durante RollingUpdate
-
-revisionHistoryLimit
-→ quantidade máxima de ReplicaSets antigos preservados
-
-progressDeadlineSeconds
-→ tempo limite para detectar rollout sem progresso
-→ não executa rollback automático
-```
-
-Documentação detalhada:
-
-- [08 — Deployments e aplicações](topics/08-deployments-applications/)
 
 ---
 
-# Próxima etapa
+# Próxima atividade
 
-## Fase 6 — Health Monitoring / Probes
+## Exec probes
 
-Próximo bloco:
+Retomar daqui na próxima sessão.
 
-```text
-readinessProbe
-      ↓
-livenessProbe
-      ↓
-startupProbe
-      ↓
-HTTP probes
-      ↓
-exec probes
-      ↓
-timings / thresholds
-      ↓
-troubleshooting de probes
+Objetivo: substituir a `readinessProbe` HTTP por uma probe do tipo `exec`, reconstruindo a sintaxe com:
+
+```bash
+oc set probe --help
 ```
 
-Objetivo: distinguir claramente **Pod rodando**, **Pod pronto para receber tráfego** e **container saudável**, incluindo falhas propositalmente introduzidas para troubleshooting.
+O comando executado dentro do container deve validar inicialmente:
+
+```text
+test -f /opt/app-root/src/app.py
+```
+
+YAML esperado conceitualmente:
+
+```yaml
+readinessProbe:
+  exec:
+    command:
+      - test
+      - -f
+      - /opt/app-root/src/app.py
+```
+
+Depois de validar `READY 1/1`, quebrar a probe apontando para:
+
+```text
+/opt/app-root/src/arquivo-que-nao-existe
+```
+
+Investigar sem solução pronta e responder:
+
+```text
+1. O que significa exit code 0 numa exec probe?
+2. E exit code diferente de 0?
+3. Com a exec readiness quebrada, o container reinicia?
+4. O Pod continua Running?
+5. READY fica quanto?
+6. Onde aparece a evidência da falha?
+```
+
+Depois disso, fechar exec probes e revisar timings / thresholds.
