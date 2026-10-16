@@ -12,6 +12,49 @@ Legenda:
 - 🟡 revisar
 - ✅ consigo fazer sozinho
 
+### Cobertura estimada do conteúdo
+
+> Estimativa de cobertura prática do conteúdo da EX288 com base no que já foi estudado e executado em laboratório. Não representa peso oficial de questões nem probabilidade de aprovação.
+
+```text
+Cobertura atual: ~60%
+
+████████████░░░░░░░░ 60%
+```
+
+Leitura rápida:
+
+```text
+forte / praticado
+→ Git e CLI oc
+→ Container Images
+→ BuildConfig e Builds
+→ ImageStreams
+→ S2I
+→ Deployments e rollouts
+→ Troubleshooting
+→ Health Monitoring / Probes
+
+em andamento / precisa reforço
+→ timings e thresholds de probes
+→ ImageChange trigger no Deployment
+→ troubleshooting de ImageStreams
+→ Custom Builder
+→ save-artifacts / incremental S2I
+
+ainda não coberto de forma suficiente
+→ ConfigMaps e Secrets
+→ multi-container Pods
+→ OpenShift Templates
+→ Helm
+→ Kustomize
+→ Pipelines / Tekton
+→ Operators
+→ console web
+```
+
+A métrica acompanha **cobertura de conteúdo**, não domínio sob pressão de prova. A prontidão real será validada por exercícios sem ajuda e simulados integrados.
+
 ---
 
 <!-- TOPICS_INDEX_START -->
@@ -134,7 +177,8 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Entender liveness probe
 - ✅ Entender startup probe
 - ✅ Criar HTTP probes
-- ⬜ Criar exec probes
+- ✅ Criar exec probes
+- ✅ Criar TCP probes
 - 🟡 Configurar delays, períodos e thresholds sem consulta
 - ✅ Diagnosticar falhas de probes
 
@@ -313,13 +357,16 @@ Status:
 ✅ livenessProbe
 ✅ startupProbe
 ✅ HTTP probes
+✅ exec probes
+✅ TCP probes
 ✅ troubleshooting de probes
 ✅ Running x Ready
 ✅ restart de container por liveness
 ✅ startup bloqueando liveness/readiness até sucesso
+✅ readiness protegendo RollingUpdate
+✅ progressDeadlineSeconds observado em rollout sem progresso
 ✅ oc events --for
 🟡 timings / thresholds: reforçar criação sem consulta
-⬜ exec probes
 ```
 
 ### Readiness validada
@@ -410,6 +457,47 @@ STATUS Running
 RESTARTS 0
 ```
 
+### Exec probe validada
+
+A `readinessProbe` foi alterada de HTTP para execução de comando dentro do container:
+
+```bash
+oc set probe deploy/probes-lab --readiness -- test -f /opt/app-root/src/app.py
+```
+
+Inspeção rápida da probe:
+
+```bash
+oc get deploy probes-lab \
+  -o jsonpath='{.spec.template.spec.containers[0].readinessProbe}' | jq
+```
+
+Regra prática validada:
+
+```text
+exit code 0
+→ probe passou
+
+exit code diferente de 0
+→ probe falhou
+```
+
+Com a readiness exec quebrada, o Pod permaneceu `Running`, ficou `READY 0/1` e o container não reiniciou.
+
+### TCP probe validada
+
+A readiness também foi testada com socket TCP.
+
+Com a aplicação ouvindo em `8080`, a probe passou. Ao apontar para `9999`, o novo Pod permaneceu `Running 0/1` e o Pod antigo saudável foi preservado pelo RollingUpdate.
+
+Evento observado:
+
+```text
+Readiness probe failed: dial tcp <pod-ip>:9999: connect: connection refused
+```
+
+O rollout sem progresso acabou atingindo o `progressDeadlineSeconds`, conectando na prática probes, readiness e estratégia de rollout.
+
 ### Troubleshooting com Events
 
 Comando incorporado ao fluxo de diagnóstico:
@@ -431,48 +519,18 @@ oc logs --previous <pod>
 
 # Próxima atividade
 
-## Exec probes
+## Timings e thresholds de probes
 
-Retomar daqui na próxima sessão.
-
-Objetivo: substituir a `readinessProbe` HTTP por uma probe do tipo `exec`, reconstruindo a sintaxe com:
-
-```bash
-oc set probe --help
-```
-
-O comando executado dentro do container deve validar inicialmente:
+Próximo bloco:
 
 ```text
-test -f /opt/app-root/src/app.py
+initialDelaySeconds
+periodSeconds
+timeoutSeconds
+failureThreshold
+successThreshold
 ```
 
-YAML esperado conceitualmente:
+Objetivo: calcular e prever o comportamento das probes sob pressão de tempo, sem depender de tentativa e erro.
 
-```yaml
-readinessProbe:
-  exec:
-    command:
-      - test
-      - -f
-      - /opt/app-root/src/app.py
-```
-
-Depois de validar `READY 1/1`, quebrar a probe apontando para:
-
-```text
-/opt/app-root/src/arquivo-que-nao-existe
-```
-
-Investigar sem solução pronta e responder:
-
-```text
-1. O que significa exit code 0 numa exec probe?
-2. E exit code diferente de 0?
-3. Com a exec readiness quebrada, o container reinicia?
-4. O Pod continua Running?
-5. READY fica quanto?
-6. Onde aparece a evidência da falha?
-```
-
-Depois disso, fechar exec probes e revisar timings / thresholds.
+Depois disso, fechar o bloco de Health Monitoring e seguir para o próximo domínio ainda não coberto.
