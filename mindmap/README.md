@@ -14,7 +14,7 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | ImageStreams | ✅ / 🟡 troubleshooting | [Abrir](../topics/04-imagestreams/) |
 | S2I | ✅ / 🟡 incremental + trigger habit | [Labs](../s2i-troubleshooting/) |
 | Deployments e aplicações | ✅ rollout/strategies | [Abrir](../topics/08-deployments-applications/) |
-| Health Monitoring / Probes | ⬜ próximo | Será praticado na próxima etapa |
+| Health Monitoring / Probes | ✅ core / 🟡 timings | [Abrir](../topics/07-health-monitoring/) |
 | Troubleshooting | 🟡 em evolução | [Abrir](../topics/09-troubleshooting/) |
 
 ---
@@ -123,12 +123,26 @@ mindmap
       CrashLoopBackOff ✅
       ImagePullBackOff ✅
       Deployment rollout ✅
-      Events 🟡
+      Events ✅
       Pending ⬜
-    Health Monitoring ⬜
-      readiness
-      liveness
-      startup
+    Health Monitoring ✅
+      readiness ✅
+        Running pode ser NotReady
+        controla tráfego do Service
+      liveness ✅
+        falha reinicia container
+      startup ✅
+        bloqueia live e ready até sucesso
+      Probe types ✅
+        HTTP
+        exec
+        TCP
+      Timings 🟡
+        initialDelaySeconds
+        periodSeconds
+        timeoutSeconds
+        failureThreshold
+        successThreshold
 ```
 
 ---
@@ -425,35 +439,115 @@ oc set triggers --help
 
 ---
 
-## Próximo ramo: Health Monitoring / Probes
+## Health Monitoring / Probes — fluxo validado
 
 ```mermaid
 flowchart TD
-    POD[Pod / Container] --> STARTUP[startupProbe]
-    STARTUP --> LIVE[livenessProbe]
-    STARTUP --> READY[readinessProbe]
+    C[Container inicia] --> START[startupProbe]
 
-    READY --> TRAFFIC["entra / sai dos endpoints do Service"]
-    LIVE --> RESTART["reinicia container se necessário"]
+    START -->|FAIL até threshold| SRESTART[reinicia container]
+    START -->|SUCCESS| LIVE[livenessProbe]
+    START -->|SUCCESS| READY[readinessProbe]
 
-    READY --> HTTP[HTTP probe]
-    READY --> EXEC[exec probe]
+    LIVE -->|SUCCESS| LOK[container continua]
+    LIVE -->|FAIL até threshold| RESTART[reinicia container]
 
-    LIVE --> HTTP2[HTTP probe]
-    LIVE --> EXEC2[exec probe]
+    READY -->|SUCCESS| ROK[Ready]
+    READY -->|FAIL até threshold| NREADY[NotReady]
+
+    ROK --> SVC[Service pode enviar tráfego]
+    NREADY --> NOSVC[fora dos endpoints elegíveis]
 ```
 
-Próximo objetivo:
+### Tipos de probe praticados
+
+```mermaid
+flowchart LR
+    PROBE[Probe] --> HTTP[HTTP]
+    PROBE --> EXEC[exec]
+    PROBE --> TCP[TCP]
+
+    HTTP --> HRES[status HTTP válido]
+    EXEC --> ERES[exit code 0]
+    TCP --> TRES[conexão TCP abre]
+```
+
+Modelo mental:
 
 ```text
-container está executando?
-        ≠
-aplicação está saudável?
-        ≠
-aplicação está pronta para receber tráfego?
+startup
+→ terminou de inicializar?
+
+liveness
+→ continua saudável?
+
+readiness
+→ já pode receber trabalho / tráfego?
+```
+
+### Timings e thresholds
+
+```text
+initialDelaySeconds
+→ espera antes da primeira tentativa
+
+periodSeconds
+→ intervalo entre tentativas
+
+timeoutSeconds
+→ prazo de uma tentativa
+
+failureThreshold
+→ falhas consecutivas
+
+successThreshold
+→ sucessos consecutivos
+```
+
+Comando de inspeção que virou atalho:
+
+```bash
+oc get deploy probes-lab \
+  -o jsonpath='{.spec.template.spec.containers[0].readinessProbe}' | jq
+```
+
+Troubleshooting usado:
+
+```bash
+oc events --for pod/<pod>
+```
+
+Lab TCP quebrado:
+
+```text
+readiness TCP → porta 9999
+        ↓
+connection refused
+        ↓
+novo Pod Running 0/1
+        ↓
+Pod antigo 1/1 preservado
+        ↓
+rollout sem progresso
+        ↓
+progressDeadlineSeconds excedido
 ```
 
 ---
+
+## Próximo ramo: ConfigMaps e Secrets
+
+```mermaid
+flowchart TD
+    CFG[Configuração da aplicação] --> CM[ConfigMap]
+    CFG --> SEC[Secret]
+
+    CM --> ENV1[env / envFrom]
+    CM --> VOL1[volume]
+
+    SEC --> ENV2[env / envFrom]
+    SEC --> VOL2[volume]
+```
 
 ## Regra de manutenção
 
