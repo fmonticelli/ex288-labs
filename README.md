@@ -68,6 +68,7 @@ A métrica acompanha **cobertura de conteúdo**, não domínio sob pressão de p
 - [04 — ImageStreams](topics/04-imagestreams/)
 - [S2I — aplicação prática](s2i-python/)
 - [S2I — troubleshooting prático](s2i-troubleshooting/)
+- [07 — Health Monitoring / Probes](topics/07-health-monitoring/)
 - [08 — Deployments e aplicações](topics/08-deployments-applications/)
 - [09 — Troubleshooting](topics/09-troubleshooting/)
 
@@ -498,6 +499,65 @@ Readiness probe failed: dial tcp <pod-ip>:9999: connect: connection refused
 
 O rollout sem progresso acabou atingindo o `progressDeadlineSeconds`, conectando na prática probes, readiness e estratégia de rollout.
 
+### Timings e thresholds
+
+Modelo mental consolidado:
+
+```text
+initialDelaySeconds
+→ quanto esperar antes da primeira tentativa
+
+periodSeconds
+→ periodicidade entre tentativas
+
+timeoutSeconds
+→ prazo máximo de uma tentativa individual
+
+failureThreshold
+→ quantidade de falhas consecutivas para considerar a probe falha
+
+successThreshold
+→ quantidade de sucessos consecutivos para considerar a probe saudável
+```
+
+Exemplo estudado:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 3
+  periodSeconds: 4
+  timeoutSeconds: 2
+  failureThreshold: 3
+```
+
+Linha do tempo:
+
+```text
+t=3  primeira tentativa
+t=7  segunda tentativa
+t=11 terceira tentativa
+```
+
+Um sucesso no meio das falhas reinicia a contagem de `failureThreshold`.
+
+O conceito de `failureThreshold` é o mesmo entre probes; muda o efeito da falha:
+
+```text
+readiness falha
+→ Pod fica NotReady / sai do tráfego elegível
+
+liveness falha
+→ container é reiniciado
+
+startup falha
+→ container é reiniciado antes de liberar liveness/readiness
+```
+
+Os timings foram entendidos e praticados, mas ficam 🟡 para reforçar cálculo rápido sem consulta. Em prova, `oc explain` é o fallback para confirmar semântica e restrições dos campos.
+
 ### Troubleshooting com Events
 
 Comando incorporado ao fluxo de diagnóstico:
@@ -519,18 +579,34 @@ oc logs --previous <pod>
 
 # Próxima atividade
 
-## Timings e thresholds de probes
+## Fase 7 — ConfigMaps e Secrets
 
-Próximo bloco:
+O bloco principal de Health Monitoring / Probes foi concluído.
+
+Pendência de revisão:
 
 ```text
-initialDelaySeconds
-periodSeconds
-timeoutSeconds
-failureThreshold
-successThreshold
+🟡 timings / thresholds
+→ reforçar cálculo rápido sem consulta
 ```
 
-Objetivo: calcular e prever o comportamento das probes sob pressão de tempo, sem depender de tentativa e erro.
+Próximo domínio:
 
-Depois disso, fechar o bloco de Health Monitoring e seguir para o próximo domínio ainda não coberto.
+```text
+ConfigMap
+→ literal / arquivo
+→ env / envFrom
+→ volume
+
+Secret
+→ literal / arquivo
+→ env / envFrom
+→ volume
+
+alteração de configuração
+→ rollout / validação / troubleshooting
+```
+
+Documentação detalhada do bloco concluído:
+
+- [07 — Health Monitoring / Probes](topics/07-health-monitoring/)
