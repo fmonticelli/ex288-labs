@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="920" height="240" viewBox="0 0 920 240" role="img" aria-labelledby="title desc">
-  <title id="title">EX288 Practical Coverage — 66%</title>
-  <desc id="desc">Practical study coverage for the EX288 lab repository. Current focus: Multi-container Pods.</desc>
+  <title id="title">EX288 Cobertura Prática — 66%</title>
+  <desc id="desc">Cobertura prática dos estudos para o repositório de laboratório EX288. Foco atual: Pods com múltiplos contêineres.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -30,7 +30,7 @@
   <rect x="10" y="10" width="900" height="4" rx="2" fill="url(#accent)"/>
 
   <text x="48" y="58" fill="#f8fafc" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">
-    EX288 • Practical Coverage
+    EX288 • Cobertura Prática
   </text>
 
   <text x="48" y="84" fill="#94a3b8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">
@@ -47,15 +47,15 @@
 
   <circle cx="56" cy="174" r="5" fill="#22c55e"/>
   <text x="70" y="179" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">
-    Completed: ConfigMaps &amp; Secrets
+    Concluído: ConfigMaps &amp; Secrets
   </text>
 
   <circle cx="56" cy="204" r="5" fill="#38bdf8"/>
   <text x="70" y="209" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">
-    Current focus: Multi-container Pods
+    Foco atual: Pods com múltiplos contêineres
   </text>
 
   <text x="888" y="207" text-anchor="end" fill="#64748b" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12">
-    coverage ≠ exam score
+    cobertura ≠ nota da prova
   </text>
 </svg>
