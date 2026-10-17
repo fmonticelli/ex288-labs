@@ -15,6 +15,7 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | S2I | ✅ / 🟡 incremental + trigger habit | [Labs](../s2i-troubleshooting/) |
 | Deployments e aplicações | ✅ rollout/strategies | [Abrir](../topics/08-deployments-applications/) |
 | Health Monitoring / Probes | ✅ core / 🟡 timings | [Abrir](../topics/07-health-monitoring/) |
+| ConfigMaps e Secrets | ✅ core / 🟡 envFrom manifest | [Abrir](../topics/06-configmaps-secrets/) |
 | Troubleshooting | 🟡 em evolução | [Abrir](../topics/09-troubleshooting/) |
 
 ---
@@ -125,6 +126,24 @@ mindmap
       Deployment rollout ✅
       Events ✅
       Pending ⬜
+    ConfigMaps e Secrets ✅
+      ConfigMap
+        literal ✅
+        from-file ✅
+        from-env-file ✅
+        env ✅
+        volume ✅
+      Secret
+        literal ✅
+        from-file ✅
+        base64 ✅
+        env ✅
+        volume ✅
+      Atualização
+        env exige novo Pod
+        volume atualiza sem rollout
+        propagação pode atrasar
+      envFrom manifest 🟡
     Health Monitoring ✅
       readiness ✅
         Running pode ser NotReady
@@ -535,18 +554,86 @@ progressDeadlineSeconds excedido
 
 ---
 
-## Próximo ramo: ConfigMaps e Secrets
+## ConfigMaps e Secrets — fluxo validado
 
 ```mermaid
 flowchart TD
     CFG[Configuração da aplicação] --> CM[ConfigMap]
     CFG --> SEC[Secret]
 
-    CM --> ENV1[env / envFrom]
-    CM --> VOL1[volume]
+    CM --> CENV[env]
+    CM --> CVOL[volume]
+    SEC --> SENV[env]
+    SEC --> SVOL[volume]
 
-    SEC --> ENV2[env / envFrom]
-    SEC --> VOL2[volume]
+    CENV --> NEWPOD1[novo Pod para reler valor]
+    SENV --> NEWPOD2[novo Pod para reler valor]
+
+    CVOL --> UPDATE1[arquivo projetado atualiza sem rollout]
+    SVOL --> UPDATE2[arquivo projetado atualiza sem rollout]
+
+    UPDATE1 --> DELAY[atualização pode ter delay]
+    UPDATE2 --> DELAY
+```
+
+Modelo mental:
+
+```text
+--from-file
+→ nome do arquivo vira a key
+→ conteúdo inteiro vira o value
+
+--from-env-file
+→ cada KEY=VALUE vira uma key separada
+
+Secret.data
+→ base64
+→ encoding, não criptografia
+
+env
+→ alteração do ConfigMap / Secret não muda container já criado
+→ novo Pod necessário
+
+volume
+→ atualização projetada pode aparecer sem rollout
+→ pode existir atraso
+→ subPath é exceção importante
+```
+
+Comandos praticados:
+
+```bash
+oc create cm app-config --from-literal=APP_MESSAGE=hello --from-literal=APP_MODE=study
+oc create cm app-config-file --from-file app.properties
+oc create cm app-config-env --from-env-file app.properties
+
+oc set env deploy/config-lab --from=configmap/app-config-env
+oc set volumes deploy/config-lab --add --type configmap \
+  --configmap-name app-config-file --mount-path /etc/config
+
+oc create secret generic app-secret \
+  --from-literal=DB_USER=admin \
+  --from-literal=DB_PASSWORD=s3cr3t
+
+oc create secret generic app-secret-file --from-file=credentials.txt
+oc set env deploy/config-lab --from=secret/app-secret
+oc set volumes deploy/config-lab --add --type secret \
+  --secret-name app-secret-file --mount-path /etc/secret
+
+oc rollout restart deploy/config-lab
+```
+
+---
+
+## Próximo ramo: Multi-container Pods
+
+```mermaid
+flowchart LR
+    POD[Pod] --> APP[Container principal]
+    POD --> SIDE[Sidecar]
+    INIT[initContainer] --> POD
+    APP --> VOL[Volume compartilhado]
+    SIDE --> VOL
 ```
 
 ## Regra de manutenção
