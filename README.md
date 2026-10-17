@@ -17,7 +17,7 @@ Legenda:
 > Estimativa de cobertura prática do conteúdo da EX288 com base no que já foi estudado e executado em laboratório. Não representa peso oficial de questões nem probabilidade de aprovação.
 
 <p align="center">
-  <img src="assets/progress.svg" alt="EX288 Practical Coverage — 66%" width="920">
+  <img src="assets/progress.svg" alt="EX288 Cobertura Prática — 66%" width="920">
 </p>
 
 Leitura rápida:
