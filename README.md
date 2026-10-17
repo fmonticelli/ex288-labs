@@ -35,6 +35,7 @@ forte / praticado
 → ConfigMaps e Secrets
 
 em andamento / precisa reforço
+→ multi-container Pods (mini-simulado pendente)
 → timings e thresholds de probes
 → ImageChange trigger no Deployment
 → troubleshooting de ImageStreams
@@ -42,7 +43,6 @@ em andamento / precisa reforço
 → save-artifacts / incremental S2I
 
 ainda não coberto de forma suficiente
-→ multi-container Pods
 → OpenShift Templates
 → Helm
 → Kustomize
@@ -185,7 +185,14 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 ## 8. Deployments e aplicações
 
 - ✅ Criar aplicação single-container
-- ⬜ Criar aplicação multi-container
+- ✅ Criar aplicação multi-container
+- ✅ Entender o padrão sidecar
+- ✅ Compartilhar volume entre containers com `emptyDir`
+- ✅ Utilizar `initContainers`
+- ✅ Entender rede compartilhada entre containers do mesmo Pod
+- ✅ Utilizar `localhost` entre containers do mesmo Pod
+- ✅ Utilizar `oc logs -c` e `oc exec -c`
+- ✅ Diagnosticar falha em `initContainer`
 - ✅ Criar Deployment
 - ✅ Atualizar aplicações
 - ✅ Acompanhar rollouts
@@ -348,114 +355,201 @@ atualizar mindmap
 
 # Etapa atual
 
-## Fase 7 — ConfigMaps e Secrets
+## Fase 8 — Pods com múltiplos contêineres
 
 Status:
 
 ```text
-✅ ConfigMap por literal
-✅ ConfigMap por arquivo
-✅ ConfigMap por env-file
-✅ ConfigMap como variável de ambiente
-✅ ConfigMap como volume
-✅ Secret por literal
-✅ Secret por arquivo
-✅ Secret como variável de ambiente
-✅ Secret como volume
-✅ atualização de ConfigMap / Secret
-✅ comportamento env x volume
-✅ mini-simulado sem ajuda
-🟡 envFrom diretamente em manifest
+✅ Pod com dois containers
+✅ sidecar
+✅ volume compartilhado com emptyDir
+✅ leitura de arquivo compartilhado entre containers
+✅ oc logs -c
+✅ oc exec -c
+✅ initContainer
+✅ initContainer + volume compartilhado
+✅ troubleshooting de initContainer
+✅ rede compartilhada no mesmo Pod
+✅ comunicação via localhost
+🟡 mini-simulado de multi-container pendente
 ```
 
-### Fluxo validado
+### Sidecar + volume compartilhado
+
+Lab praticado:
 
 ```text
-ConfigMap / Secret
-        ↓
-      como env
-        ↓
-valor lido quando o Pod nasce
-        ↓
-alteração do recurso não muda o ambiente do container atual
-        ↓
-novo Pod necessário
-
-ConfigMap / Secret
-        ↓
-   como volume
-        ↓
-arquivo projetado no container
-        ↓
-alteração pode aparecer sem rollout
-        ↓
-pode existir atraso de propagação
+Pod sidecar-lab
+├── app
+│   └── escreve continuamente em /logs/app.log
+│
+├── sidecar
+│   └── tail -F /logs/app.log
+│
+└── emptyDir
+    └── montado em /logs pelos dois containers
 ```
 
-Comandos centrais praticados:
+Comandos de validação:
 
 ```bash
-oc create cm <nome> --from-literal=KEY=VALUE
-oc create cm <nome> --from-file=<arquivo>
-oc create cm <nome> --from-env-file=<arquivo>
+oc get pod sidecar-lab
 
-oc create secret generic <nome> --from-literal=KEY=VALUE
-oc create secret generic <nome> --from-file=<arquivo>
+oc logs sidecar-lab -c app
+oc logs sidecar-lab -c sidecar
 
-oc set env deploy/<nome> --from=configmap/<configmap>
-oc set env deploy/<nome> --from=secret/<secret>
-
-oc set volumes deploy/<nome> --add --type configmap \
-  --configmap-name <configmap> --mount-path <path>
-
-oc set volumes deploy/<nome> --add --type secret \
-  --secret-name <secret> --mount-path <path>
+oc exec sidecar-lab -c app -- tail -5 /logs/app.log
+oc exec sidecar-lab -c sidecar -- tail -5 /logs/app.log
 ```
 
-Correção de volume criado com parâmetro incorreto também foi praticada:
-
-```bash
-oc set volumes deploy/config-lab --add --type configmap \
-  --configmap-name exam-file --path /opt/exam
-
-oc set volumes deployment/config-lab --remove --name volume-svhks
-```
-
-Pegadinha importante:
+Modelo mental consolidado:
 
 ```text
---path
-→ define o path dentro da fonte do volume
+oc logs
+→ stdout / stderr do processo do container
 
---mount-path
-→ define onde o volume será montado dentro do container
+arquivo dentro do container
+→ cat / tail via oc exec
+→ ou um processo precisa enviar o conteúdo para stdout
 ```
 
-Atualização declarativa praticada:
+No lab:
+
+```text
+app
+→ grava no arquivo
+
+sidecar
+→ lê o arquivo
+→ escreve em stdout
+
+oc logs -c sidecar
+→ mostra o conteúdo produzido pela aplicação
+```
+
+Também foi explorado como bônus o crescimento de `emptyDir`, `sizeLimit` e uma versão de sidecar com rotação/compressão de logs. Esse detalhe é complementar e não é tratado como habilidade central da prova.
+
+### initContainer + volume compartilhado
+
+Lab praticado:
+
+```text
+Pod init-lab
+├── initContainer
+│   └── cria /shared/ready.txt
+│
+├── app
+│   └── lê /shared/ready.txt
+│
+└── emptyDir
+    └── montado em /shared
+```
+
+Estados observados durante a inicialização:
+
+```text
+Pending
+→ Init:0/1
+→ PodInitializing
+→ Running 1/1
+```
+
+Regra validada:
+
+```text
+initContainer precisa terminar com sucesso
+→ somente depois os containers normais iniciam
+```
+
+Troubleshooting praticado com um initContainer quebrado:
+
+```text
+cat /shared/ready.txt
+→ arquivo ainda não existe
+→ exit code 1
+→ Init:Error
+→ Init:CrashLoopBackOff
+→ app permanece em PodInitializing
+```
+
+Fluxo de diagnóstico:
 
 ```bash
-oc create ... --dry-run=client -o yaml | oc apply -f-
+oc get pod init-lab
+oc describe pod init-lab
+oc logs init-lab -c init-setup
+oc events --for pod/init-lab
 ```
 
-Secret em `data:` usa base64; isso é encoding, não criptografia. Ao chegar ao container como env ou arquivo, o valor é entregue decodificado.
+A causa mais direta apareceu em:
 
-Documentação detalhada:
+```text
+oc logs init-lab -c init-setup
 
-- [06 — ConfigMaps e Secrets](topics/06-configmaps-secrets/)
+cat: /shared/ready.txt: No such file or directory
+```
+
+### Rede compartilhada no mesmo Pod
+
+Lab praticado:
+
+```text
+Pod network-lab
+├── app
+│   └── servidor HTTP :8080
+│
+└── sidecar
+    └── curl http://localhost:8080
+```
+
+Validação:
+
+```bash
+oc apply -f network-lab.yaml
+oc get pod -l app=network-lab
+oc logs network-lab -c sidecar
+```
+
+Modelo mental:
+
+```text
+mesmo Pod
+→ mesmo namespace de rede
+→ mesmo IP do Pod
+→ localhost compartilhado
+→ Service não é necessário para comunicação entre containers do mesmo Pod
+
+Pods diferentes
+→ localhost aponta para o próprio Pod
+→ normalmente usar Service para descoberta estável
+```
+
+### Arquivos de laboratório
+
+Os manifests usados nesta fase foram organizados em:
+
+```text
+labs/08-multicontainer/
+├── init-lab.yaml
+├── init-lab-broken.yaml
+├── network-lab.yaml
+├── sidecar-lab.yaml
+└── sidecar-log-rotation.yaml
+```
 
 ---
 
 # Próxima atividade
 
-## Fase 8 — Multi-container Pods
+## Mini-simulado — Pods com múltiplos contêineres
 
-Próximo bloco:
+Próximo passo:
 
 ```text
-Pod com mais de um container
-→ containers compartilhando rede
-→ volumes compartilhados
-→ initContainers
+resolver cenário sem solução pronta
 → sidecar
-→ troubleshooting de container específico
+→ volume compartilhado
+→ initContainer
+→ troubleshooting por container
+→ rede via localhost
 ```
