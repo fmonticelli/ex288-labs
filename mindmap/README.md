@@ -620,7 +620,22 @@ oc set env deploy/config-lab --from=secret/app-secret
 oc set volumes deploy/config-lab --add --type secret \
   --secret-name app-secret-file --mount-path /etc/secret
 
+# remoção de volume criado incorretamente
+oc set volumes deployment/config-lab --remove --name volume-svhks
+
 oc rollout restart deploy/config-lab
+```
+
+Pegadinha praticada:
+
+```text
+--path
+≠
+--mount-path
+
+volume criado errado
+→ identificar o nome gerado
+→ oc set volumes ... --remove --name <volume>
 ```
 
 ---
