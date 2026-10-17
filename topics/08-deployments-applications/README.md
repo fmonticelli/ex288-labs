@@ -1213,3 +1213,216 @@ ImagePullBackOff
 - geração proposital de `ImagePullBackOff`;
 - comparação de disponibilidade entre `RollingUpdate` e `Recreate`;
 - troubleshooting de rollout.
+
+
+---
+
+# Multi-container Pods
+
+Este bloco complementa Deployments e aplicações com execução de múltiplos containers dentro do mesmo Pod.
+
+## Modelo mental
+
+```text
+Pod
+├── initContainer
+│   └── preparação antes dos containers normais
+├── app
+│   └── workload principal
+└── sidecar
+    └── processo auxiliar de longa duração
+```
+
+Containers do mesmo Pod:
+
+```text
+✅ compartilham o mesmo namespace de rede
+✅ acessam uns aos outros por localhost
+✅ podem montar o mesmo volume
+
+❌ não compartilham filesystem automaticamente
+❌ não compartilham variáveis de ambiente automaticamente
+```
+
+## Sidecar + emptyDir
+
+Lab:
+
+```text
+labs/08-multicontainer/sidecar-lab.yaml
+```
+
+Fluxo:
+
+```text
+app
+→ escreve /logs/app.log
+
+emptyDir
+→ montado em /logs nos dois containers
+
+sidecar
+→ tail -F /logs/app.log
+→ stdout
+→ oc logs -c sidecar
+```
+
+Comandos praticados:
+
+```bash
+oc logs sidecar-lab -c app
+oc logs sidecar-lab -c sidecar
+
+oc exec sidecar-lab -c app -- tail -5 /logs/app.log
+oc exec sidecar-lab -c sidecar -- tail -5 /logs/app.log
+```
+
+`oc logs` lê stdout/stderr do processo do container. Para ler arquivos internos diretamente, foi usado `oc exec`.
+
+Como exercício extra, também foi criada uma versão com rotação e compressão de logs:
+
+```text
+labs/08-multicontainer/sidecar-log-rotation.yaml
+```
+
+Esse detalhe foi tratado como enriquecimento, não como habilidade central para a prova.
+
+## initContainer + volume compartilhado
+
+Labs:
+
+```text
+labs/08-multicontainer/init-lab.yaml
+labs/08-multicontainer/init-lab-broken.yaml
+```
+
+Fluxo saudável:
+
+```text
+Pending
+→ Init:0/1
+→ PodInitializing
+→ Running
+```
+
+O initContainer criou `/shared/ready.txt` em um `emptyDir` e o container `app` leu o mesmo arquivo depois.
+
+Troubleshooting praticado:
+
+```text
+initContainer falha
+→ Init:Error
+→ Init:CrashLoopBackOff
+→ containers normais permanecem em PodInitializing
+```
+
+Comandos:
+
+```bash
+oc get pod init-lab
+oc describe pod init-lab
+oc logs init-lab -c init-setup
+oc events --for pod/init-lab
+```
+
+## Rede compartilhada via localhost
+
+Lab:
+
+```text
+labs/08-multicontainer/network-lab.yaml
+```
+
+Fluxo:
+
+```text
+app
+→ servidor HTTP :8080
+
+sidecar
+→ curl http://localhost:8080
+```
+
+Não foi necessário Service porque os containers estavam no mesmo Pod.
+
+```text
+mesmo Pod
+→ localhost compartilhado
+
+Pods diferentes
+→ localhost não alcança o outro Pod
+→ normalmente usar Service
+```
+
+## Mini-simulado
+
+Labs:
+
+```text
+labs/08-multicontainer/exam-multicontainer.yaml
+labs/08-multicontainer/exam-multicontainer-broken.yaml
+```
+
+Cenário saudável:
+
+```text
+initContainer prepare
+→ cria /shared/index.html
+
+app
+→ serve /shared com HTTP :8080
+
+sidecar
+→ curl -s http://localhost:8080/index.html
+
+resultado
+→ 2/2 Running
+→ HTTP 200
+→ EX288 multi-container ready
+```
+
+Cenário quebrado:
+
+```text
+initContainer sem volumeMount de /shared
+→ /shared não existe
+→ exit code 1
+→ Init:Error
+→ Init:CrashLoopBackOff
+→ app e sidecar presos em PodInitializing
+```
+
+Causa encontrada com:
+
+```bash
+oc logs exam-multicontainer-broken -c prepare
+```
+
+Saída observada:
+
+```text
+/shared/index.html: No such file or directory
+```
+
+## Fluxo de troubleshooting para prova
+
+```bash
+oc get pod <pod>
+oc describe pod <pod>
+oc logs <pod> -c <container>
+oc exec <pod> -c <container> -- <comando>
+oc events --for pod/<pod>
+```
+
+Status do bloco:
+
+```text
+✅ multi-container
+✅ sidecar
+✅ initContainer
+✅ emptyDir compartilhado
+✅ localhost
+✅ logs/exec por container
+✅ troubleshooting
+✅ mini-simulado sem ajuda
+```
