@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: network-lab
+  name: network-lab
+  namespace: monticelli-ex288
+spec:
+  containers:
+    - name: app
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - python3 -m http.server 8080
+    - name: sidecar
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - while true; do curl http://localhost:8080; done

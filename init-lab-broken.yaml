@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: init-lab
+  name: init-lab-broken
+  namespace: monticelli-ex288
+spec:
+  volumes:
+    - name: shared-data
+      emptyDir: {}
+  initContainers:
+    - name: init-setup
+      image: registry.access.redhat.com/ubi9/ubi-minimal
+      volumeMounts:
+      - name: shared-data
+        mountPath: /shared
+      command:
+        - bash
+        - -c
+        - cat /shared/ready.txt
+  containers:
+    - name: app
+      image: registry.access.redhat.com/ubi9/ubi-minimal
+      command:
+        - bash
+        - -c
+        - while true; do cat /shared/ready.txt; sleep 10; done
+      volumeMounts:
+      - name: shared-data
+        mountPath: /shared

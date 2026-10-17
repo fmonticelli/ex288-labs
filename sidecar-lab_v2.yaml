@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: sidecar-lab
+  name: sidecar-lab
+  namespace: monticelli-ex288
+spec:
+  volumes:
+    - name: logs
+      emptyDir:
+        sizeLimit: 20Mi
+
+  containers:
+    - name: app
+      image: registry.access.redhat.com/ubi9/ubi-minimal
+      command:
+        - bash
+        - -c
+        - |
+          while true; do
+            echo "$(date) app trabalhando XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" >> /logs/app.log
+            sleep 0.2
+          done
+      volumeMounts:
+        - name: logs
+          mountPath: /logs
+
+    - name: sidecar
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          touch /logs/app.log
+
+          tail -F /logs/app.log &
+
+          while true; do
+            SIZE=$(wc -c < /logs/app.log)
+
+            if [ "$SIZE" -ge 10240 ]; then
+              TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+              ROTATED="/logs/app.log.${TIMESTAMP}"
+
+              echo "Rotacionando app.log com ${SIZE} bytes para ${ROTATED}.gz"
+
+              mv /logs/app.log "${ROTATED}"
+              touch /logs/app.log
+
+              gzip "${ROTATED}"
+
+              # mantém somente as 3 rotações comprimidas mais recentes
+              ls -1t /logs/app.log.*.gz 2>/dev/null \
+                | tail -n +4 \
+                | xargs -r rm -f
+            fi
+
+            sleep 2
+          done
+      volumeMounts:
+        - name: logs
+          mountPath: /logs
