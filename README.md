@@ -17,9 +17,9 @@ Legenda:
 > Estimativa de cobertura prática do conteúdo da EX288 com base no que já foi estudado e executado em laboratório. Não representa peso oficial de questões nem probabilidade de aprovação.
 
 ```text
-Cobertura atual: ~60%
+Cobertura atual: ~66%
 
-████████████░░░░░░░░ 60%
+█████████████░░░░░░░ 66%
 ```
 
 Leitura rápida:
@@ -34,6 +34,7 @@ forte / praticado
 → Deployments e rollouts
 → Troubleshooting
 → Health Monitoring / Probes
+→ ConfigMaps e Secrets
 
 em andamento / precisa reforço
 → timings e thresholds de probes
@@ -43,7 +44,6 @@ em andamento / precisa reforço
 → save-artifacts / incremental S2I
 
 ainda não coberto de forma suficiente
-→ ConfigMaps e Secrets
 → multi-container Pods
 → OpenShift Templates
 → Helm
@@ -68,6 +68,7 @@ A métrica acompanha **cobertura de conteúdo**, não domínio sob pressão de p
 - [04 — ImageStreams](topics/04-imagestreams/)
 - [S2I — aplicação prática](s2i-python/)
 - [S2I — troubleshooting prático](s2i-troubleshooting/)
+- [06 — ConfigMaps e Secrets](topics/06-configmaps-secrets/)
 - [07 — Health Monitoring / Probes](topics/07-health-monitoring/)
 - [08 — Deployments e aplicações](topics/08-deployments-applications/)
 - [09 — Troubleshooting](topics/09-troubleshooting/)
@@ -161,16 +162,16 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 
 ## 6. ConfigMaps e Secrets
 
-- ⬜ Criar ConfigMap
-- ⬜ Criar ConfigMap a partir de arquivo
-- ⬜ Criar ConfigMap a partir de valores literais
-- ⬜ Injetar ConfigMap como variável de ambiente
-- ⬜ Utilizar `envFrom`
-- ⬜ Montar ConfigMap como volume
-- ⬜ Criar Secret
-- ⬜ Injetar Secret como variável de ambiente
-- ⬜ Montar Secret como volume
-- ⬜ Atualizar configuração de aplicações
+- ✅ Criar ConfigMap
+- ✅ Criar ConfigMap a partir de arquivo
+- ✅ Criar ConfigMap a partir de valores literais
+- ✅ Injetar ConfigMap como variável de ambiente
+- 🟡 Utilizar `envFrom` diretamente em manifest
+- ✅ Montar ConfigMap como volume
+- ✅ Criar Secret
+- ✅ Injetar Secret como variável de ambiente
+- ✅ Montar Secret como volume
+- ✅ Atualizar configuração de aplicações
 
 ## 7. Health Monitoring
 
@@ -285,7 +286,7 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ⬜ Simulado de ImageStreams
 - ⬜ Simulado de S2I
 - ⬜ Simulado de deployments
-- ⬜ Simulado de ConfigMaps e Secrets
+- ✅ Simulado de ConfigMaps e Secrets
 - ⬜ Simulado de probes
 - ⬜ Simulado de Templates
 - ⬜ Simulado de Helm
@@ -349,264 +350,95 @@ atualizar mindmap
 
 # Etapa atual
 
-## Fase 6 — Health Monitoring / Probes
+## Fase 7 — ConfigMaps e Secrets
 
 Status:
 
 ```text
-✅ readinessProbe
-✅ livenessProbe
-✅ startupProbe
-✅ HTTP probes
-✅ exec probes
-✅ TCP probes
-✅ troubleshooting de probes
-✅ Running x Ready
-✅ restart de container por liveness
-✅ startup bloqueando liveness/readiness até sucesso
-✅ readiness protegendo RollingUpdate
-✅ progressDeadlineSeconds observado em rollout sem progresso
-✅ oc events --for
-🟡 timings / thresholds: reforçar criação sem consulta
+✅ ConfigMap por literal
+✅ ConfigMap por arquivo
+✅ ConfigMap por env-file
+✅ ConfigMap como variável de ambiente
+✅ ConfigMap como volume
+✅ Secret por literal
+✅ Secret por arquivo
+✅ Secret como variável de ambiente
+✅ Secret como volume
+✅ atualização de ConfigMap / Secret
+✅ comportamento env x volume
+✅ mini-simulado sem ajuda
+🟡 envFrom diretamente em manifest
 ```
 
-### Readiness validada
-
-Foi configurada uma readiness HTTP saudável em `/health` e depois quebrada propositalmente apontando para um caminho inexistente.
-
-Com a probe quebrada:
+### Fluxo validado
 
 ```text
-Pod
-STATUS=Running
-READY=0/1
-RESTARTS=0
+ConfigMap / Secret
+        ↓
+      como env
+        ↓
+valor lido quando o Pod nasce
+        ↓
+alteração do recurso não muda o ambiente do container atual
+        ↓
+novo Pod necessário
+
+ConfigMap / Secret
+        ↓
+   como volume
+        ↓
+arquivo projetado no container
+        ↓
+alteração pode aparecer sem rollout
+        ↓
+pode existir atraso de propagação
 ```
 
-A aplicação continuou executando, mas o Pod deixou de ficar Ready. Em RollingUpdate, o Pod antigo saudável permaneceu atendendo enquanto o novo Pod não passou na readiness.
-
-Diagnóstico observado:
-
-```text
-Readiness probe failed: HTTP probe failed with statuscode: 404
-```
-
-### Liveness validada
-
-A liveness HTTP foi configurada inicialmente em `/health` e depois quebrada propositalmente.
-
-Foi observado o mesmo Pod reiniciando seu container:
-
-```text
-READY alternando entre 0/1 e 1/1
-RESTARTS aumentando
-nome do Pod permanecendo o mesmo
-```
-
-Events utilizados no diagnóstico:
-
-```text
-Liveness probe failed: HTTP probe failed with statuscode: 404
-Back-off restarting failed container
-```
-
-Regra prática validada:
-
-```text
-readiness falha
-→ não reinicia o container
-→ Pod deixa de ficar Ready
-→ sai do tráfego elegível do Service
-
-liveness falha
-→ kubelet reinicia o container
-→ RESTARTS aumenta
-→ o mesmo Pod continua existindo
-```
-
-### Startup validada
-
-Foi configurada uma startup probe propositalmente quebrada:
-
-```text
-periodSeconds: 5
-failureThreshold: 3
-```
-
-Modelo mental validado:
-
-```text
-startupProbe
-→ testa a inicialização repetidamente
-→ liveness/readiness ficam bloqueadas até sucesso
-→ ao atingir failureThreshold, o container é reiniciado
-→ falhas repetidas podem resultar em CrashLoopBackOff
-```
-
-Os Events mostraram somente falhas de startup enquanto ela não passava:
-
-```text
-Startup probe failed: HTTP probe failed with statuscode: 404
-Container ... failed startup probe, will be restarted
-```
-
-Após corrigir a startup para `/health`, o novo Pod ficou:
-
-```text
-READY 1/1
-STATUS Running
-RESTARTS 0
-```
-
-### Exec probe validada
-
-A `readinessProbe` foi alterada de HTTP para execução de comando dentro do container:
+Comandos centrais praticados:
 
 ```bash
-oc set probe deploy/probes-lab --readiness -- test -f /opt/app-root/src/app.py
+oc create cm <nome> --from-literal=KEY=VALUE
+oc create cm <nome> --from-file=<arquivo>
+oc create cm <nome> --from-env-file=<arquivo>
+
+oc create secret generic <nome> --from-literal=KEY=VALUE
+oc create secret generic <nome> --from-file=<arquivo>
+
+oc set env deploy/<nome> --from=configmap/<configmap>
+oc set env deploy/<nome> --from=secret/<secret>
+
+oc set volumes deploy/<nome> --add --type configmap \
+  --configmap-name <configmap> --mount-path <path>
+
+oc set volumes deploy/<nome> --add --type secret \
+  --secret-name <secret> --mount-path <path>
 ```
 
-Inspeção rápida da probe:
+Atualização declarativa praticada:
 
 ```bash
-oc get deploy probes-lab \
-  -o jsonpath='{.spec.template.spec.containers[0].readinessProbe}' | jq
+oc create ... --dry-run=client -o yaml | oc apply -f-
 ```
 
-Regra prática validada:
+Secret em `data:` usa base64; isso é encoding, não criptografia. Ao chegar ao container como env ou arquivo, o valor é entregue decodificado.
 
-```text
-exit code 0
-→ probe passou
+Documentação detalhada:
 
-exit code diferente de 0
-→ probe falhou
-```
-
-Com a readiness exec quebrada, o Pod permaneceu `Running`, ficou `READY 0/1` e o container não reiniciou.
-
-### TCP probe validada
-
-A readiness também foi testada com socket TCP.
-
-Com a aplicação ouvindo em `8080`, a probe passou. Ao apontar para `9999`, o novo Pod permaneceu `Running 0/1` e o Pod antigo saudável foi preservado pelo RollingUpdate.
-
-Evento observado:
-
-```text
-Readiness probe failed: dial tcp <pod-ip>:9999: connect: connection refused
-```
-
-O rollout sem progresso acabou atingindo o `progressDeadlineSeconds`, conectando na prática probes, readiness e estratégia de rollout.
-
-### Timings e thresholds
-
-Modelo mental consolidado:
-
-```text
-initialDelaySeconds
-→ quanto esperar antes da primeira tentativa
-
-periodSeconds
-→ periodicidade entre tentativas
-
-timeoutSeconds
-→ prazo máximo de uma tentativa individual
-
-failureThreshold
-→ quantidade de falhas consecutivas para considerar a probe falha
-
-successThreshold
-→ quantidade de sucessos consecutivos para considerar a probe saudável
-```
-
-Exemplo estudado:
-
-```yaml
-livenessProbe:
-  httpGet:
-    path: /health
-    port: 8080
-  initialDelaySeconds: 3
-  periodSeconds: 4
-  timeoutSeconds: 2
-  failureThreshold: 3
-```
-
-Linha do tempo:
-
-```text
-t=3  primeira tentativa
-t=7  segunda tentativa
-t=11 terceira tentativa
-```
-
-Um sucesso no meio das falhas reinicia a contagem de `failureThreshold`.
-
-O conceito de `failureThreshold` é o mesmo entre probes; muda o efeito da falha:
-
-```text
-readiness falha
-→ Pod fica NotReady / sai do tráfego elegível
-
-liveness falha
-→ container é reiniciado
-
-startup falha
-→ container é reiniciado antes de liberar liveness/readiness
-```
-
-Os timings foram entendidos e praticados, mas ficam 🟡 para reforçar cálculo rápido sem consulta. Em prova, `oc explain` é o fallback para confirmar semântica e restrições dos campos.
-
-### Troubleshooting com Events
-
-Comando incorporado ao fluxo de diagnóstico:
-
-```bash
-oc events --for pod/<pod>
-```
-
-Também continuam úteis:
-
-```bash
-oc get pods
-oc describe pod <pod>
-oc logs <pod>
-oc logs --previous <pod>
-```
+- [06 — ConfigMaps e Secrets](topics/06-configmaps-secrets/)
 
 ---
 
 # Próxima atividade
 
-## Fase 7 — ConfigMaps e Secrets
+## Fase 8 — Multi-container Pods
 
-O bloco principal de Health Monitoring / Probes foi concluído.
-
-Pendência de revisão:
+Próximo bloco:
 
 ```text
-🟡 timings / thresholds
-→ reforçar cálculo rápido sem consulta
+Pod com mais de um container
+→ containers compartilhando rede
+→ volumes compartilhados
+→ initContainers
+→ sidecar
+→ troubleshooting de container específico
 ```
-
-Próximo domínio:
-
-```text
-ConfigMap
-→ literal / arquivo
-→ env / envFrom
-→ volume
-
-Secret
-→ literal / arquivo
-→ env / envFrom
-→ volume
-
-alteração de configuração
-→ rollout / validação / troubleshooting
-```
-
-Documentação detalhada do bloco concluído:
-
-- [07 — Health Monitoring / Probes](topics/07-health-monitoring/)
