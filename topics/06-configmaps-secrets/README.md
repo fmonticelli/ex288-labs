@@ -132,6 +132,51 @@ Pegadinha encontrada no laboratório:
 --mount-path
 ```
 
+Foi executado inicialmente, de forma incorreta:
+
+```bash
+oc set volumes deploy/config-lab \
+  --add \
+  --type configmap \
+  --configmap-name exam-file \
+  --path /opt/exam
+```
+
+O comando criou um volume:
+
+```text
+info: Generated volume name: volume-svhks
+```
+
+Como o objetivo era montar o volume dentro do container, o parâmetro correto era `--mount-path`.
+
+O volume criado incorretamente foi removido com:
+
+```bash
+oc set volumes deployment/config-lab \
+  --remove \
+  --name volume-svhks
+```
+
+Fluxo de recuperação praticado:
+
+```text
+volume criado com opção errada
+→ observar o nome do volume gerado
+→ remover com --remove --name <volume>
+→ recriar usando --mount-path
+```
+
+Distinção prática:
+
+```text
+--path
+→ path dentro da fonte do volume
+
+--mount-path
+→ caminho de montagem dentro do container
+```
+
 Para montar no container, foi necessário usar `--mount-path`.
 
 ## ConfigMap como env
