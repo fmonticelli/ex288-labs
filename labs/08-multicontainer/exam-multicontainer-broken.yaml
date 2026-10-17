@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels: 
+    app: exam-multicontainer-broken
+  name: exam-multicontainer-broken
+  namespace: monticelli-ex288
+spec:
+  volumes:
+    - name: shared-data
+      emptyDir: {}
+  initContainers:
+    - name: prepare
+      image: registry.access.redhat.com/ubi9/ubi-minimal
+      command:
+        - bash
+        - -c
+        - echo 'EX288 multi-container ready' > /shared/index.html
+  containers:
+    - name: app
+      image: registry.access.redhat.com/ubi9/ubi
+      volumeMounts:
+        - name: shared-data
+          mountPath: /shared
+      command:
+        - bash
+        - -c
+        - cd /shared && python3 -m http.server 8080
+    - name: sidecar
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - while true; do curl -s http://localhost:8080/index.html; sleep 5; done
