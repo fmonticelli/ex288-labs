@@ -414,6 +414,25 @@ oc set volumes deploy/<nome> --add --type secret \
   --secret-name <secret> --mount-path <path>
 ```
 
+Correção de volume criado com parâmetro incorreto também foi praticada:
+
+```bash
+oc set volumes deploy/config-lab --add --type configmap \
+  --configmap-name exam-file --path /opt/exam
+
+oc set volumes deployment/config-lab --remove --name volume-svhks
+```
+
+Pegadinha importante:
+
+```text
+--path
+→ define o path dentro da fonte do volume
+
+--mount-path
+→ define onde o volume será montado dentro do container
+```
+
 Atualização declarativa praticada:
 
 ```bash
