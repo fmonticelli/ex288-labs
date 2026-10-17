@@ -17,7 +17,7 @@ Legenda:
 > Estimativa de cobertura prática do conteúdo da EX288 com base no que já foi estudado e executado em laboratório. Não representa peso oficial de questões nem probabilidade de aprovação.
 
 <p align="center">
-  <img src="assets/dashboard.svg" alt="EX288 Dashboard de Estudos — 66%" width="920">
+  <img src="assets/dashboard.svg" alt="EX288 Dashboard de Estudos — 72%" width="920">
 </p>
 
 Leitura rápida:
@@ -33,9 +33,9 @@ forte / praticado
 → Troubleshooting
 → Health Monitoring / Probes
 → ConfigMaps e Secrets
+→ multi-container Pods
 
 em andamento / precisa reforço
-→ multi-container Pods (mini-simulado pendente)
 → timings e thresholds de probes
 → ImageChange trigger no Deployment
 → troubleshooting de ImageStreams
@@ -292,6 +292,7 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ⬜ Simulado de S2I
 - ⬜ Simulado de deployments
 - ✅ Simulado de ConfigMaps e Secrets
+- ✅ Simulado de multi-container Pods
 - ⬜ Simulado de probes
 - ⬜ Simulado de Templates
 - ⬜ Simulado de Helm
@@ -371,7 +372,7 @@ Status:
 ✅ troubleshooting de initContainer
 ✅ rede compartilhada no mesmo Pod
 ✅ comunicação via localhost
-🟡 mini-simulado de multi-container pendente
+✅ mini-simulado de multi-container
 ```
 
 ### Sidecar + volume compartilhado
@@ -534,22 +535,71 @@ labs/08-multicontainer/
 ├── init-lab-broken.yaml
 ├── network-lab.yaml
 ├── sidecar-lab.yaml
-└── sidecar-log-rotation.yaml
+├── sidecar-log-rotation.yaml
+├── exam-multicontainer.yaml
+└── exam-multicontainer-broken.yaml
+```
+
+---
+
+### Mini-simulado concluído
+
+Cenário resolvido sem solução pronta:
+
+```text
+Pod exam-multicontainer
+├── initContainer prepare
+│   └── cria /shared/index.html
+├── app
+│   └── serve /shared em HTTP :8080
+├── sidecar
+│   └── curl -s http://localhost:8080/index.html
+└── emptyDir shared-data
+```
+
+Validações realizadas:
+
+```text
+✅ Pod 2/2 Running
+✅ initContainer concluiu com sucesso
+✅ app respondeu HTTP 200
+✅ sidecar recebeu "EX288 multi-container ready"
+✅ troubleshooting de versão quebrada
+```
+
+Na versão quebrada, o initContainer ficou sem o `volumeMount` de `/shared`. O diagnóstico mostrou:
+
+```text
+Init:Error
+→ Init:CrashLoopBackOff
+→ app e sidecar em PodInitializing
+→ oc logs -c prepare
+→ /shared/index.html: No such file or directory
+```
+
+Fluxo de prova consolidado:
+
+```bash
+oc get pod <pod>
+oc describe pod <pod>
+oc logs <pod> -c <container>
+oc exec <pod> -c <container> -- <comando>
+oc events --for pod/<pod>
 ```
 
 ---
 
 # Próxima atividade
 
-## Mini-simulado — Pods com múltiplos contêineres
+## OpenShift Templates
 
-Próximo passo:
+Próximo bloco principal:
 
 ```text
-resolver cenário sem solução pronta
-→ sidecar
-→ volume compartilhado
-→ initContainer
-→ troubleshooting por container
-→ rede via localhost
+Template
+→ parameters
+→ objects
+→ oc process
+→ criação de recursos
+→ troubleshooting
 ```
