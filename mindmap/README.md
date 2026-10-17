@@ -13,7 +13,7 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | BuildConfig e Builds | ✅ / 🟡 custom builder | [Abrir](../topics/03-buildconfig-builds/) |
 | ImageStreams | ✅ / 🟡 troubleshooting | [Abrir](../topics/04-imagestreams/) |
 | S2I | ✅ / 🟡 incremental + trigger habit | [Labs](../s2i-troubleshooting/) |
-| Deployments e aplicações | ✅ rollout/strategies | [Abrir](../topics/08-deployments-applications/) |
+| Deployments e aplicações | ✅ rollout + multi-container | [Abrir](../topics/08-deployments-applications/) |
 | Health Monitoring / Probes | ✅ core / 🟡 timings | [Abrir](../topics/07-health-monitoring/) |
 | ConfigMaps e Secrets | ✅ core / 🟡 envFrom manifest | [Abrir](../topics/06-configmaps-secrets/) |
 | Troubleshooting | 🟡 em evolução | [Abrir](../topics/09-troubleshooting/) |
@@ -144,6 +144,14 @@ mindmap
         volume atualiza sem rollout
         propagação pode atrasar
       envFrom manifest 🟡
+    Multi-container ✅
+      Sidecar ✅
+      initContainer ✅
+      emptyDir compartilhado ✅
+      localhost no mesmo Pod ✅
+      logs por container ✅
+      exec por container ✅
+      troubleshooting Init CrashLoopBackOff ✅
     Health Monitoring ✅
       readiness ✅
         Running pode ser NotReady
@@ -650,6 +658,55 @@ flowchart LR
     APP --> VOL[Volume compartilhado]
     SIDE --> VOL
 ```
+
+## Multi-container Pods — fluxo validado
+
+```mermaid
+flowchart TD
+    INIT[initContainer prepare] -->|termina com sucesso| APP[app container]
+    INIT -->|grava arquivo| VOL[(emptyDir compartilhado)]
+    VOL --> APP
+    VOL --> SIDE[sidecar]
+    APP -->|HTTP localhost:8080| SIDE
+```
+
+Modelo mental:
+
+```text
+sidecar
+→ processo auxiliar de longa duração
+→ acompanha a vida do Pod
+
+initContainer
+→ prepara algo antes
+→ precisa terminar com sucesso
+
+mesmo Pod
+→ mesma rede / localhost
+→ volumes só são compartilhados quando montados explicitamente
+```
+
+Troubleshooting consolidado:
+
+```bash
+oc get pod <pod>
+oc describe pod <pod>
+oc logs <pod> -c <container>
+oc exec <pod> -c <container> -- <comando>
+oc events --for pod/<pod>
+```
+
+Mini-simulado concluído:
+
+```text
+initContainer → cria index.html
+app → serve o arquivo em :8080
+sidecar → curl -s localhost:8080/index.html
+broken → initContainer sem volumeMount
+resultado → Init:CrashLoopBackOff
+```
+
+---
 
 ## Regra de manutenção
 
