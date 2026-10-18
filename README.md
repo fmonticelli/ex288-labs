@@ -376,7 +376,9 @@ Status:
 🟡 Template gerando Deployment + Service
 🟡 validação do Service ponta a ponta
 🟡 consulta de Template existente no namespace openshift
-⬜ Template armazenado no cluster e processamento por nome
+🟡 descoberta de apiVersion com oc explain (GROUP + VERSION)
+🟡 uso de labels globais do Template
+🟡 Template armazenado no cluster e processamento por nome
 ⬜ troubleshooting de Templates
 ⬜ mini-simulado sem ajuda
 ```
@@ -404,7 +406,8 @@ O Template não executa nem gerencia a aplicação depois da criação. Ele func
 ```text
 labs/10-templates/
 ├── template-basic.yaml
-└── template-parameters.yaml
+├── template-parameters.yaml
+└── template-review.yaml
 ```
 
 Fluxos praticados:
@@ -443,6 +446,91 @@ Para reconstruir a sintaxe, além de `oc explain`, foi consultado um Template re
 ```bash
 oc get template -n openshift mariadb-ephemeral -o yaml
 ```
+
+### Revisão de criação de Template
+
+Foi refeita a criação de um Template do zero para reforçar a estrutura e o `apiVersion`.
+
+Fluxo usado para descobrir a API correta:
+
+```bash
+oc explain template | head
+oc explain deployment | head
+oc explain service | head
+```
+
+Regra consolidada:
+
+```text
+se GROUP existe
+→ apiVersion = GROUP/VERSION
+
+se GROUP não aparece
+→ recurso pertence ao core API group
+→ apiVersion = VERSION
+```
+
+Exemplos praticados:
+
+```text
+Template   → template.openshift.io/v1
+Deployment → apps/v1
+Service    → v1
+```
+
+Também foi praticado o uso de `labels:` no próprio Template:
+
+```yaml
+labels:
+  app: ${APP_NAME}
+```
+
+Esse label é aplicado ao `metadata.labels` dos objetos processados, reduzindo repetição. Ele não substitui:
+
+```text
+Deployment.spec.selector.matchLabels
+Deployment.spec.template.metadata.labels
+Service.spec.selector
+```
+
+### Template armazenado no cluster
+
+O lab `template-review.yaml` foi atualizado com `metadata.name` e salvo no cluster.
+
+Fluxos praticados:
+
+```bash
+oc apply -f labs/10-templates/template-review.yaml
+
+oc get template
+
+oc process template-review-app
+
+oc process template-review-app \
+  -p APP_NAME=review-from-cluster
+
+oc process --parameters template-review-app
+```
+
+Modelo mental:
+
+```text
+arquivo local
+→ oc process -f template.yaml
+
+Template armazenado no cluster
+→ oc process nome-do-template
+```
+
+Para criar os recursos a partir do Template armazenado:
+
+```bash
+oc process template-review-app \
+  -p APP_NAME=review-from-cluster \
+| oc apply -f -
+```
+
+A revisão ainda permanece como 🟡 porque a criação de Templates precisa ficar mais natural antes de ser considerada domínio sem consulta.
 
 ---
 
