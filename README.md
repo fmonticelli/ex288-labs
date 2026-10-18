@@ -36,6 +36,7 @@ forte / praticado
 → multi-container Pods
 
 em andamento / precisa reforço
+→ OpenShift Templates (fundamentos praticados; falta troubleshooting + mini-simulado)
 → timings e thresholds de probes
 → ImageChange trigger no Deployment
 → troubleshooting de ImageStreams
@@ -43,7 +44,6 @@ em andamento / precisa reforço
 → save-artifacts / incremental S2I
 
 ainda não coberto de forma suficiente
-→ OpenShift Templates
 → Helm
 → Kustomize
 → Pipelines / Tekton
@@ -60,6 +60,7 @@ A métrica acompanha **cobertura de conteúdo**, não domínio sob pressão de p
 # Material estudado
 
 - [🧭 Mindmap navegável](mindmap/)
+- [🧪 Índice de laboratórios](labs/)
 - [01 — Fundamentos OpenShift e Git](topics/01-openshift-git/)
 - [02 — Container Images](topics/02-container-images/)
 - [03 — BuildConfig e Builds](topics/03-buildconfig-builds/)
@@ -230,13 +231,13 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 
 ## 10. OpenShift Templates
 
-- ⬜ Entender Templates
-- ⬜ Criar Template
-- ⬜ Trabalhar com `parameters`
-- ⬜ Trabalhar com `objects`
-- ⬜ Processar Template
-- ⬜ Fornecer parâmetros
-- ⬜ Utilizar Templates existentes
+- 🟡 Entender Templates
+- 🟡 Criar Template
+- 🟡 Trabalhar com `parameters`
+- 🟡 Trabalhar com `objects`
+- 🟡 Processar Template
+- 🟡 Fornecer parâmetros
+- 🟡 Utilizar Templates existentes
 - ⬜ Troubleshooting de Templates
 
 ## 11. Helm
@@ -356,250 +357,102 @@ atualizar mindmap
 
 # Etapa atual
 
-## Fase 8 — Pods com múltiplos contêineres
+## Fase 10 — OpenShift Templates
 
 Status:
 
 ```text
-✅ Pod com dois containers
-✅ sidecar
-✅ volume compartilhado com emptyDir
-✅ leitura de arquivo compartilhado entre containers
-✅ oc logs -c
-✅ oc exec -c
-✅ initContainer
-✅ initContainer + volume compartilhado
-✅ troubleshooting de initContainer
-✅ rede compartilhada no mesmo Pod
-✅ comunicação via localhost
-✅ mini-simulado de multi-container
+🟡 estrutura básica de Template
+🟡 parameters
+🟡 objects
+🟡 substituição com ${PARAMETER}
+🟡 valores default
+🟡 sobrescrita com -p
+🟡 parâmetros required
+🟡 generate: expression / from
+🟡 oc process --parameters
+🟡 oc process
+🟡 oc process | oc apply
+🟡 Template gerando Deployment + Service
+🟡 validação do Service ponta a ponta
+🟡 consulta de Template existente no namespace openshift
+⬜ Template armazenado no cluster e processamento por nome
+⬜ troubleshooting de Templates
+⬜ mini-simulado sem ajuda
 ```
 
-### Sidecar + volume compartilhado
-
-Lab praticado:
+### Modelo mental
 
 ```text
-Pod sidecar-lab
-├── app
-│   └── escreve continuamente em /logs/app.log
-│
-├── sidecar
-│   └── tail -F /logs/app.log
-│
-└── emptyDir
-    └── montado em /logs pelos dois containers
+Template
+├── parameters
+└── objects
+      ↓
+  oc process
+      ↓
+manifests normais
+      ↓
+   oc apply
+      ↓
+recursos no cluster
 ```
 
-Comandos de validação:
+O Template não executa nem gerencia a aplicação depois da criação. Ele funciona como uma fábrica parametrizada de manifests.
+
+### Labs criados
+
+```text
+labs/10-templates/
+├── template-basic.yaml
+└── template-parameters.yaml
+```
+
+Fluxos praticados:
 
 ```bash
-oc get pod sidecar-lab
+oc process --parameters -f labs/10-templates/template-basic.yaml
 
-oc logs sidecar-lab -c app
-oc logs sidecar-lab -c sidecar
+oc process -f labs/10-templates/template-basic.yaml
 
-oc exec sidecar-lab -c app -- tail -5 /logs/app.log
-oc exec sidecar-lab -c sidecar -- tail -5 /logs/app.log
+oc process -f labs/10-templates/template-basic.yaml \
+  -p APP_NAME=ex288-template \
+| oc apply -f -
 ```
 
-Modelo mental consolidado:
+Também foi validado parâmetro obrigatório:
 
 ```text
-oc logs
-→ stdout / stderr do processo do container
-
-arquivo dentro do container
-→ cat / tail via oc exec
-→ ou um processo precisa enviar o conteúdo para stdout
+ENVIRONMENT
+→ required: true
+→ sem valor: oc process falha
+→ -p ENVIRONMENT=dev: processamento funciona
 ```
 
-No lab:
+E parâmetro gerado:
 
-```text
-app
-→ grava no arquivo
-
-sidecar
-→ lê o arquivo
-→ escreve em stdout
-
-oc logs -c sidecar
-→ mostra o conteúdo produzido pela aplicação
+```yaml
+- name: RANDOM_ID
+  generate: expression
+  from: '[a-zA-Z0-9]{8}'
 ```
 
-Também foi explorado como bônus o crescimento de `emptyDir`, `sizeLimit` e uma versão de sidecar com rotação/compressão de logs. Esse detalhe é complementar e não é tratado como habilidade central da prova.
+Execuções consecutivas do `oc process` geraram valores diferentes, confirmando que a expressão é avaliada a cada processamento.
 
-### initContainer + volume compartilhado
-
-Lab praticado:
-
-```text
-Pod init-lab
-├── initContainer
-│   └── cria /shared/ready.txt
-│
-├── app
-│   └── lê /shared/ready.txt
-│
-└── emptyDir
-    └── montado em /shared
-```
-
-Estados observados durante a inicialização:
-
-```text
-Pending
-→ Init:0/1
-→ PodInitializing
-→ Running 1/1
-```
-
-Regra validada:
-
-```text
-initContainer precisa terminar com sucesso
-→ somente depois os containers normais iniciam
-```
-
-Troubleshooting praticado com um initContainer quebrado:
-
-```text
-cat /shared/ready.txt
-→ arquivo ainda não existe
-→ exit code 1
-→ Init:Error
-→ Init:CrashLoopBackOff
-→ app permanece em PodInitializing
-```
-
-Fluxo de diagnóstico:
+Para reconstruir a sintaxe, além de `oc explain`, foi consultado um Template real disponível no cluster:
 
 ```bash
-oc get pod init-lab
-oc describe pod init-lab
-oc logs init-lab -c init-setup
-oc events --for pod/init-lab
-```
-
-A causa mais direta apareceu em:
-
-```text
-oc logs init-lab -c init-setup
-
-cat: /shared/ready.txt: No such file or directory
-```
-
-### Rede compartilhada no mesmo Pod
-
-Lab praticado:
-
-```text
-Pod network-lab
-├── app
-│   └── servidor HTTP :8080
-│
-└── sidecar
-    └── curl http://localhost:8080
-```
-
-Validação:
-
-```bash
-oc apply -f network-lab.yaml
-oc get pod -l app=network-lab
-oc logs network-lab -c sidecar
-```
-
-Modelo mental:
-
-```text
-mesmo Pod
-→ mesmo namespace de rede
-→ mesmo IP do Pod
-→ localhost compartilhado
-→ Service não é necessário para comunicação entre containers do mesmo Pod
-
-Pods diferentes
-→ localhost aponta para o próprio Pod
-→ normalmente usar Service para descoberta estável
-```
-
-### Arquivos de laboratório
-
-Os manifests usados nesta fase foram organizados em:
-
-```text
-labs/08-multicontainer/
-├── init-lab.yaml
-├── init-lab-broken.yaml
-├── network-lab.yaml
-├── sidecar-lab.yaml
-├── sidecar-log-rotation.yaml
-├── exam-multicontainer.yaml
-└── exam-multicontainer-broken.yaml
-```
-
----
-
-### Mini-simulado concluído
-
-Cenário resolvido sem solução pronta:
-
-```text
-Pod exam-multicontainer
-├── initContainer prepare
-│   └── cria /shared/index.html
-├── app
-│   └── serve /shared em HTTP :8080
-├── sidecar
-│   └── curl -s http://localhost:8080/index.html
-└── emptyDir shared-data
-```
-
-Validações realizadas:
-
-```text
-✅ Pod 2/2 Running
-✅ initContainer concluiu com sucesso
-✅ app respondeu HTTP 200
-✅ sidecar recebeu "EX288 multi-container ready"
-✅ troubleshooting de versão quebrada
-```
-
-Na versão quebrada, o initContainer ficou sem o `volumeMount` de `/shared`. O diagnóstico mostrou:
-
-```text
-Init:Error
-→ Init:CrashLoopBackOff
-→ app e sidecar em PodInitializing
-→ oc logs -c prepare
-→ /shared/index.html: No such file or directory
-```
-
-Fluxo de prova consolidado:
-
-```bash
-oc get pod <pod>
-oc describe pod <pod>
-oc logs <pod> -c <container>
-oc exec <pod> -c <container> -- <comando>
-oc events --for pod/<pod>
+oc get template -n openshift mariadb-ephemeral -o yaml
 ```
 
 ---
 
 # Próxima atividade
 
-## OpenShift Templates
-
-Próximo bloco principal:
+## Continuar OpenShift Templates
 
 ```text
-Template
-→ parameters
-→ objects
-→ oc process
-→ criação de recursos
+Template armazenado no cluster
+→ oc process <nome>
 → troubleshooting
+→ mini-simulado sem ajuda
 ```
