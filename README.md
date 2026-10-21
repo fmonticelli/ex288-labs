@@ -37,6 +37,8 @@ forte / praticado
 
 em andamento / precisa reforço
 → OpenShift Templates (conteúdo praticado; falta ganhar fluência sob tempo)
+→ Helm (núcleo praticado; falta repetição a frio)
+→ Kustomize (base/overlay/patches praticados; falta troubleshooting + repetição)
 → timings e thresholds de probes
 → ImageChange trigger no Deployment
 → troubleshooting de ImageStreams
@@ -44,8 +46,6 @@ em andamento / precisa reforço
 → save-artifacts / incremental S2I
 
 ainda não coberto de forma suficiente
-→ Helm
-→ Kustomize
 → Pipelines / Tekton
 → Operators
 → console web
@@ -71,6 +71,9 @@ A métrica acompanha **cobertura de conteúdo**, não domínio sob pressão de p
 - [07 — Health Monitoring / Probes](topics/07-health-monitoring/)
 - [08 — Deployments e aplicações](topics/08-deployments-applications/)
 - [09 — Troubleshooting](topics/09-troubleshooting/)
+- [10 — OpenShift Templates — labs](labs/10-templates/)
+- [11 — Helm — labs](labs/11-helm/)
+- [12 — Kustomize — labs](labs/12-kustomize/)
 
 O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `topics/` guardam conceitos, comandos, exercícios, validações e troubleshooting realizados durante os laboratórios.
 
@@ -242,25 +245,33 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 
 ## 11. Helm
 
-- ⬜ Entender estrutura de um Chart
-- ⬜ `Chart.yaml`
-- ⬜ `values.yaml`
-- ⬜ Diretório `templates/`
-- ⬜ Criar Chart
-- ⬜ `helm install`
-- ⬜ `helm upgrade`
-- ⬜ Sobrescrever values
-- ⬜ Troubleshooting de Helm
+- 🟡 Entender estrutura de um Chart
+- 🟡 `Chart.yaml`
+- 🟡 `values.yaml`
+- 🟡 Diretório `templates/`
+- 🟡 Criar Chart
+- 🟡 `helm template` e `helm lint`
+- 🟡 `helm install`
+- 🟡 `helm list` e `helm status`
+- 🟡 `helm get values` e `helm get manifest`
+- 🟡 `helm upgrade`
+- 🟡 `helm history`
+- 🟡 `helm rollback`
+- 🟡 `helm uninstall`
+- 🟡 Sobrescrever values com `-f` e `--set`
+- 🟡 Troubleshooting de Helm
 
 ## 12. Kustomize
 
-- ⬜ Criar `kustomization.yaml`
-- ⬜ Trabalhar com resources
-- ⬜ Trabalhar com bases e overlays
-- ⬜ Aplicar patches
-- ⬜ Alterar imagens
-- ⬜ Alterar réplicas
-- ⬜ Aplicar com `oc apply -k`
+- 🟡 Criar `kustomization.yaml`
+- 🟡 Trabalhar com resources
+- 🟡 Trabalhar com bases e overlays
+- 🟡 Aplicar patches
+- 🟡 Alterar imagens
+- 🟡 Alterar réplicas
+- 🟡 Trabalhar com labels
+- 🟡 Renderizar com `oc kustomize`
+- 🟡 Aplicar com `oc apply -k`
 - ⬜ Troubleshooting de Kustomize
 
 ## 13. OpenShift Pipelines / Tekton
@@ -357,277 +368,160 @@ atualizar mindmap
 
 # Etapa atual
 
-## Fase 10 — OpenShift Templates
+## Fase 12 — Kustomize
 
-Status:
+### Helm — núcleo praticado
 
-```text
-🟡 estrutura básica de Template
-🟡 parameters
-🟡 objects
-🟡 substituição com ${PARAMETER}
-🟡 valores default
-🟡 sobrescrita com -p
-🟡 parâmetros required
-🟡 generate: expression / from
-🟡 oc process --parameters
-🟡 oc process
-🟡 oc process | oc apply
-🟡 Template gerando Deployment + Service
-🟡 validação do Service ponta a ponta
-🟡 consulta de Template existente no namespace openshift
-🟡 descoberta de apiVersion com oc explain (GROUP + VERSION)
-🟡 uso de labels globais do Template
-🟡 Template armazenado no cluster e processamento por nome
-🟡 troubleshooting de Templates
-🟡 mini-simulado concluído com apoio pontual
-🟡 fluxo completo ainda precisa ganhar velocidade
-```
+O bloco de Helm foi percorrido de ponta a ponta, mas permanece 🟡 até uma repetição a frio.
 
-### Modelo mental
+Fluxo praticado:
 
 ```text
-Template
-├── parameters
-└── objects
-      ↓
-  oc process
-      ↓
-manifests normais
-      ↓
-   oc apply
-      ↓
-recursos no cluster
+Chart.yaml + values.yaml + templates/
+        ↓
+helm lint
+        ↓
+helm template
+        ↓
+dry-run contra a API
+        ↓
+helm install
+        ↓
+Release
+        ↓
+upgrade / history / rollback
+        ↓
+uninstall
 ```
 
-O Template não executa nem gerencia a aplicação depois da criação. Ele funciona como uma fábrica parametrizada de manifests.
-
-### Labs criados
-
-```text
-labs/10-templates/
-├── template-basic.yaml
-├── template-parameters.yaml
-└── template-review.yaml
-```
-
-Fluxos praticados:
+Comandos usados:
 
 ```bash
-oc process --parameters -f labs/10-templates/template-basic.yaml
+helm create review-app
+helm lint ./ex288-app
+helm template teste ./ex288-app
 
-oc process -f labs/10-templates/template-basic.yaml
+helm template teste ./ex288-app \
+  -f ex288-app/values-prod.yaml \
+  --set replicaCount=4
 
-oc process -f labs/10-templates/template-basic.yaml \
-  -p APP_NAME=ex288-template \
-| oc apply -f -
+helm template teste ./ex288-app \
+| oc apply --dry-run=server -f -
+
+helm install ex288-release ./ex288-app
+helm list
+helm status ex288-release
+helm get values ex288-prod
+helm get manifest ex288-prod
+helm upgrade ex288-release ./ex288-app --reuse-values --set replicaCount=3
+helm history ex288-release
+helm rollback ex288-release 1
+helm uninstall ex288-release
 ```
 
-Também foi validado parâmetro obrigatório:
+Troubleshooting praticado em três camadas:
 
 ```text
-ENVIRONMENT
-→ required: true
-→ sem valor: oc process falha
-→ -p ENVIRONMENT=dev: processamento funciona
+template Helm inválido
+→ helm lint / helm template falham
+
+Helm renderiza, mas manifest é inválido
+→ dry-run=server rejeita
+
+manifest válido + Pod Running, mas aplicação não responde
+→ investigar com oc get / logs / exec / Service
 ```
 
-E parâmetro gerado:
+Pegadinha consolidada:
 
-```yaml
-- name: RANDOM_ID
-  generate: expression
-  from: '[a-zA-Z0-9]{8}'
+```text
+containerPort
+→ não faz o processo escutar naquela porta
+
+porta real
+→ definida pelo processo da aplicação
 ```
 
-Execuções consecutivas do `oc process` geraram valores diferentes, confirmando que a expressão é avaliada a cada processamento.
+### Kustomize — em andamento
 
-Para reconstruir a sintaxe, além de `oc explain`, foi consultado um Template real disponível no cluster:
+Modelo mental atual:
+
+```text
+base/
+→ YAML Kubernetes normal
+
+overlay/
+→ reutiliza a base
+→ aplica diferenças
+
+kustomization.yaml
+→ resources
+→ replicas
+→ images
+→ labels
+→ patches
+```
+
+Estrutura praticada:
+
+```text
+labs/12-kustomize/
+├── base/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── kustomization.yaml
+└── overlays/
+    └── prod/
+        ├── kustomization.yaml
+        └── deployment-patch.yaml
+```
+
+Fluxos usados:
 
 ```bash
-oc get template -n openshift mariadb-ephemeral -o yaml
+oc kustomize .
+oc kustomize overlays/prod
+oc apply -k overlays/prod --dry-run=server
+oc apply -k overlays/prod --dry-run=server -o yaml
 ```
 
-### Revisão de criação de Template
-
-Foi refeita a criação de um Template do zero para reforçar a estrutura e o `apiVersion`.
-
-Fluxo usado para descobrir a API correta:
-
-```bash
-oc explain template | head
-oc explain deployment | head
-oc explain service | head
-```
-
-Regra consolidada:
+Transformações já praticadas:
 
 ```text
-se GROUP existe
-→ apiVersion = GROUP/VERSION
-
-se GROUP não aparece
-→ recurso pertence ao core API group
-→ apiVersion = VERSION
+resources ✅
+base + overlay ✅
+replicas ✅
+images ✅
+labels ✅
+patches ✅
+oc apply -k ✅
+troubleshooting ⬜
+repetição sem ajuda ⬜
 ```
 
-Exemplos praticados:
+Regra importante:
 
 ```text
-Template   → template.openshift.io/v1
-Deployment → apps/v1
-Service    → v1
+kustomization.yaml
+→ configuração local do Kustomize
+→ não é recurso da API do cluster
+→ oc explain não descreve sua sintaxe
+
+conteúdo do patch
+→ estrutura Kubernetes normal
+→ oc explain ajuda a reconstruir campos
 ```
-
-Também foi praticado o uso de `labels:` no próprio Template:
-
-```yaml
-labels:
-  app: ${APP_NAME}
-```
-
-Esse label é aplicado ao `metadata.labels` dos objetos processados, reduzindo repetição. Ele não substitui:
-
-```text
-Deployment.spec.selector.matchLabels
-Deployment.spec.template.metadata.labels
-Service.spec.selector
-```
-
-### Template armazenado no cluster
-
-O lab `template-review.yaml` foi atualizado com `metadata.name` e salvo no cluster.
-
-Fluxos praticados:
-
-```bash
-oc apply -f labs/10-templates/template-review.yaml
-
-oc get template
-
-oc process template-review-app
-
-oc process template-review-app \
-  -p APP_NAME=review-from-cluster
-
-oc process --parameters template-review-app
-```
-
-Modelo mental:
-
-```text
-arquivo local
-→ oc process -f template.yaml
-
-Template armazenado no cluster
-→ oc process nome-do-template
-```
-
-Para criar os recursos a partir do Template armazenado:
-
-```bash
-oc process template-review-app \
-  -p APP_NAME=review-from-cluster \
-| oc apply -f -
-```
-
-A revisão ainda permanece como 🟡 porque a criação de Templates precisa ficar mais natural antes de ser considerada domínio sem consulta.
-
-### Mini-simulado de Templates — troubleshooting
-
-Foi resolvido um Template propositalmente quebrado contendo problemas de:
-
-```text
-apiVersion do Template
-apiVersion do Deployment
-metadata.name do Template
-labels / selectors
-uso real do parâmetro IMAGE
-parâmetro ENVIRONMENT obrigatório
-processamento local e pelo nome
-```
-
-Fluxo concluído:
-
-```bash
-oc process -f labs/10-templates/template-broken-exam.yaml
-
-oc process -p ENVIRONMENT=prod \
-  -p APP_NAME=template-sim \
-  -f labs/10-templates/template-broken-exam.yaml \
-| oc apply -f - --dry-run=server
-
-oc apply -f labs/10-templates/template-broken-exam.yaml
-
-oc process --parameters template-exam
-
-oc process template-exam \
-  -p ENVIRONMENT=prod \
-  -p APP_NAME=template-sim \
-| oc apply -f -
-```
-
-Validações realizadas:
-
-```text
-Deployment 1/1
-Pod Running
-Service criado
-Endpoint disponível
-HTTP respondendo via nome do Service
-```
-
-Também foi reforçada a diferença:
-
-```text
-oc apply -f template.yaml
-→ salva o próprio Template no cluster
-
-oc process template-exam | oc apply -f -
-→ processa o Template e cria os objetos gerados
-```
-
-O mini-simulado foi concluído, mas com uma lembrança pontual sobre como armazenar o Template no cluster. Por isso o bloco permanece 🟡 até uma nova repetição a frio e com menos tempo.
 
 ---
 
 # Próxima atividade
 
-## Fase 11 — Helm
-
-Templates entra agora em fase de consolidação. O próximo conteúdo novo será Helm.
-
-Objetivo do próximo bloco:
+## Fechar Kustomize e iniciar Tekton
 
 ```text
-Chart
-├── Chart.yaml
-├── values.yaml
-└── templates/
-      ├── deployment.yaml
-      └── service.yaml
-          ↓
-      helm template
-          ↓
-      helm install
-          ↓
-       Release
+Kustomize troubleshooting
+→ repetição curta sem ajuda
+→ Tekton / OpenShift Pipelines
 ```
 
-Sequência planejada:
-
-```text
-anatomia de um Chart
-→ helm create
-→ values.yaml
-→ templates/
-→ helm template
-→ helm install
-→ helm list / status
-→ helm upgrade
-→ helm history
-→ helm rollback
-→ helm uninstall
-```
-
-Templates será revisitado em outro momento com um novo exercício sem ajuda para medir fluência e tempo.
+Kustomize continuará 🟡 até o troubleshooting e uma repetição a frio. Helm também permanece 🟡 até um exercício posterior sem ajuda.
