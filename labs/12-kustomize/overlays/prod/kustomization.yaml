@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+replicas:
+  - name: kustomize-app
+    count: 3
+
+images:
+  - name: registry.access.redhat.com/ubi9/ubi
+    newName: registry.access.redhat.com/ubi9/ubi-minimal
+
+labels:
+  - pairs:
+      environment: prod
+
+patches:
+  - path: deployment-patch.yaml

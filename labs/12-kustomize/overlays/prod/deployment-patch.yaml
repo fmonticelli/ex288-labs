@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kustomize-app
+spec:
+  template:
+    spec:
+      containers:
+        - name: kustomize-app
+          env:
+            - name: ENVIRONMENT
+              value: production

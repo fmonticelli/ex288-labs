@@ -1,0 +1,6 @@
+appName: helm-prod
+
+replicaCount: 2
+
+service:
+  port: 9090

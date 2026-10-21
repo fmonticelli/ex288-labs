@@ -1,0 +1,10 @@
+appName: ex288-app
+
+replicaCount: 1
+
+image:
+  repository: registry.access.redhat.com/ubi9/ubi
+  tag: latest
+
+service:
+  port: 8080
