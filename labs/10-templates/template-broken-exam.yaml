@@ -1,0 +1,58 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: template-exam
+  labels:
+    app: template-exam
+
+parameters:
+  - name: APP_NAME
+    value: template-exam
+
+  - name: IMAGE
+    value: registry.access.redhat.com/ubi9/ubi
+
+  - name: ENVIRONMENT
+    required: true
+
+objects:
+  - kind: Deployment
+    apiVersion: apps/v1
+    metadata:
+      name: ${APP_NAME}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: ${APP_NAME}
+      template:
+        metadata:
+          labels:
+            app: ${APP_NAME}
+        spec:
+          containers:
+            - name: ${APP_NAME}
+              image: ${IMAGE}
+              command:
+                - bash
+                - -c
+                - python3 -m http.server 8080
+              env:
+                - name: ENVIRONMENT
+                  value: ${ENVIRONMENT}
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: ${APP_NAME}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      selector:
+        app: ${APP_NAME}
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
