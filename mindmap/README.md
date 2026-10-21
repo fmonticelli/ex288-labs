@@ -17,6 +17,9 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | Health Monitoring / Probes | ✅ core / 🟡 timings | [Abrir](../topics/07-health-monitoring/) |
 | ConfigMaps e Secrets | ✅ core / 🟡 envFrom manifest | [Abrir](../topics/06-configmaps-secrets/) |
 | Troubleshooting | 🟡 em evolução | [Abrir](../topics/09-troubleshooting/) |
+| OpenShift Templates | 🟡 conteúdo praticado | [Labs](../labs/10-templates/) |
+| Helm | 🟡 núcleo praticado | [Labs](../labs/11-helm/) |
+| Kustomize | 🟡 em andamento | [Labs](../labs/12-kustomize/) |
 
 ---
 
@@ -152,6 +155,38 @@ mindmap
       logs por container ✅
       exec por container ✅
       troubleshooting Init CrashLoopBackOff ✅
+    OpenShift Templates 🟡
+      parameters
+      objects
+      oc process
+      required
+      generate expression
+      Template no cluster
+      troubleshooting
+    Helm 🟡
+      Chart.yaml
+      values.yaml
+      templates
+      .Values
+      helm lint
+      helm template
+      install
+      upgrade
+      history
+      rollback
+      uninstall
+      troubleshooting
+    Kustomize 🟡
+      kustomization.yaml
+      resources
+      base
+      overlays
+      replicas
+      images
+      labels
+      patches
+      oc apply -k
+      troubleshooting ⬜
     Health Monitoring ✅
       readiness ✅
         Running pode ser NotReady
@@ -704,6 +739,108 @@ app → serve o arquivo em :8080
 sidecar → curl -s localhost:8080/index.html
 broken → initContainer sem volumeMount
 resultado → Init:CrashLoopBackOff
+```
+
+---
+
+## Helm — modelo mental
+
+```mermaid
+flowchart TD
+    CHART[Chart] --> META[Chart.yaml]
+    CHART --> VALUES[values.yaml]
+    CHART --> TPL[templates/*.yaml]
+
+    VALUES --> TPL
+    META --> TPL
+
+    TPL --> RENDER[helm template]
+    RENDER --> YAML[Manifests Kubernetes]
+
+    CHART --> INSTALL[helm install]
+    INSTALL --> RELEASE[Release]
+    RELEASE --> UPGRADE[helm upgrade]
+    UPGRADE --> HISTORY[helm history]
+    HISTORY --> ROLLBACK[helm rollback]
+    RELEASE --> UNINSTALL[helm uninstall]
+```
+
+Modelo mental:
+
+```text
+YAML Kubernetes correto
+→ identificar o que deve ser configurável
+→ mover defaults para values.yaml
+→ referenciar com {{ .Values... }}
+→ helm lint
+→ helm template
+→ validar na API
+```
+
+Troubleshooting:
+
+```text
+helm lint / template falha
+→ problema no template Helm
+
+render funciona + API rejeita
+→ problema no manifest Kubernetes
+
+API aceita + app falha
+→ troubleshooting normal com oc
+```
+
+---
+
+## Kustomize — modelo mental
+
+```mermaid
+flowchart TD
+    BASE[base/] --> BDEP[deployment.yaml]
+    BASE --> BSVC[service.yaml]
+    BASE --> BK[kustomization.yaml]
+
+    BASE --> OVERLAY[overlays/prod/]
+    PATCH[deployment-patch.yaml] --> OVERLAY
+    OVERLAY --> OK[kustomization.yaml]
+
+    OK --> BUILD[oc kustomize]
+    BUILD --> FINAL[YAML final]
+    FINAL --> APPLY[oc apply -k]
+```
+
+```text
+base
+→ manifests comuns
+
+overlay
+→ diferenças do ambiente
+
+resources
+→ inclui base/manifests
+
+replicas
+→ altera quantidade
+
+images
+→ troca imagem/tag
+
+labels
+→ adiciona labels
+
+patches
+→ altera campos específicos
+```
+
+Regra prática:
+
+```text
+kustomization.yaml
+→ sintaxe própria do Kustomize
+
+patch.yaml
+→ estrutura de recurso Kubernetes
+→ oc explain continua útil
 ```
 
 ---
