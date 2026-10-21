@@ -36,7 +36,7 @@ forte / praticado
 → multi-container Pods
 
 em andamento / precisa reforço
-→ OpenShift Templates (fundamentos praticados; falta troubleshooting + mini-simulado)
+→ OpenShift Templates (conteúdo praticado; falta ganhar fluência sob tempo)
 → timings e thresholds de probes
 → ImageChange trigger no Deployment
 → troubleshooting de ImageStreams
@@ -238,7 +238,7 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - 🟡 Processar Template
 - 🟡 Fornecer parâmetros
 - 🟡 Utilizar Templates existentes
-- ⬜ Troubleshooting de Templates
+- 🟡 Troubleshooting de Templates
 
 ## 11. Helm
 
@@ -295,7 +295,7 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Simulado de ConfigMaps e Secrets
 - ✅ Simulado de multi-container Pods
 - ⬜ Simulado de probes
-- ⬜ Simulado de Templates
+- 🟡 Simulado de Templates
 - ⬜ Simulado de Helm
 - ⬜ Simulado de Kustomize
 - ⬜ Simulado de Tekton
@@ -379,8 +379,9 @@ Status:
 🟡 descoberta de apiVersion com oc explain (GROUP + VERSION)
 🟡 uso de labels globais do Template
 🟡 Template armazenado no cluster e processamento por nome
-⬜ troubleshooting de Templates
-⬜ mini-simulado sem ajuda
+🟡 troubleshooting de Templates
+🟡 mini-simulado concluído com apoio pontual
+🟡 fluxo completo ainda precisa ganhar velocidade
 ```
 
 ### Modelo mental
@@ -532,15 +533,101 @@ oc process template-review-app \
 
 A revisão ainda permanece como 🟡 porque a criação de Templates precisa ficar mais natural antes de ser considerada domínio sem consulta.
 
+### Mini-simulado de Templates — troubleshooting
+
+Foi resolvido um Template propositalmente quebrado contendo problemas de:
+
+```text
+apiVersion do Template
+apiVersion do Deployment
+metadata.name do Template
+labels / selectors
+uso real do parâmetro IMAGE
+parâmetro ENVIRONMENT obrigatório
+processamento local e pelo nome
+```
+
+Fluxo concluído:
+
+```bash
+oc process -f labs/10-templates/template-broken-exam.yaml
+
+oc process -p ENVIRONMENT=prod \
+  -p APP_NAME=template-sim \
+  -f labs/10-templates/template-broken-exam.yaml \
+| oc apply -f - --dry-run=server
+
+oc apply -f labs/10-templates/template-broken-exam.yaml
+
+oc process --parameters template-exam
+
+oc process template-exam \
+  -p ENVIRONMENT=prod \
+  -p APP_NAME=template-sim \
+| oc apply -f -
+```
+
+Validações realizadas:
+
+```text
+Deployment 1/1
+Pod Running
+Service criado
+Endpoint disponível
+HTTP respondendo via nome do Service
+```
+
+Também foi reforçada a diferença:
+
+```text
+oc apply -f template.yaml
+→ salva o próprio Template no cluster
+
+oc process template-exam | oc apply -f -
+→ processa o Template e cria os objetos gerados
+```
+
+O mini-simulado foi concluído, mas com uma lembrança pontual sobre como armazenar o Template no cluster. Por isso o bloco permanece 🟡 até uma nova repetição a frio e com menos tempo.
+
 ---
 
 # Próxima atividade
 
-## Continuar OpenShift Templates
+## Fase 11 — Helm
+
+Templates entra agora em fase de consolidação. O próximo conteúdo novo será Helm.
+
+Objetivo do próximo bloco:
 
 ```text
-Template armazenado no cluster
-→ oc process <nome>
-→ troubleshooting
-→ mini-simulado sem ajuda
+Chart
+├── Chart.yaml
+├── values.yaml
+└── templates/
+      ├── deployment.yaml
+      └── service.yaml
+          ↓
+      helm template
+          ↓
+      helm install
+          ↓
+       Release
 ```
+
+Sequência planejada:
+
+```text
+anatomia de um Chart
+→ helm create
+→ values.yaml
+→ templates/
+→ helm template
+→ helm install
+→ helm list / status
+→ helm upgrade
+→ helm history
+→ helm rollback
+→ helm uninstall
+```
+
+Templates será revisitado em outro momento com um novo exercício sem ajuda para medir fluência e tempo.
