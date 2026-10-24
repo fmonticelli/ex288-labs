@@ -17,9 +17,10 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | Health Monitoring / Probes | ✅ core / 🟡 timings | [Abrir](../topics/07-health-monitoring/) |
 | ConfigMaps e Secrets | ✅ core / 🟡 envFrom manifest | [Abrir](../topics/06-configmaps-secrets/) |
 | Troubleshooting | 🟡 em evolução | [Abrir](../topics/09-troubleshooting/) |
-| OpenShift Templates | 🟡 conteúdo praticado | [Labs](../labs/10-templates/) |
-| Helm | 🟡 núcleo praticado | [Labs](../labs/11-helm/) |
-| Kustomize | 🟡 em andamento | [Labs](../labs/12-kustomize/) |
+| OpenShift Templates | 🟡 cold sim concluído | [Labs](../labs/10-templates/) |
+| Helm | ✅ cold sim concluído | [Labs](../labs/11-helm/) |
+| Kustomize | 🟡 núcleo praticado / adiado | [Labs](../labs/12-kustomize/) |
+| Tekton / Pipelines | ⬜ próximo foco | — |
 
 ---
 
@@ -163,7 +164,7 @@ mindmap
       generate expression
       Template no cluster
       troubleshooting
-    Helm 🟡
+    Helm ✅
       Chart.yaml
       values.yaml
       templates
@@ -176,6 +177,7 @@ mindmap
       rollback
       uninstall
       troubleshooting
+      cold sim ✅
     Kustomize 🟡
       kustomization.yaml
       resources
@@ -187,6 +189,15 @@ mindmap
       patches
       oc apply -k
       troubleshooting ⬜
+    Tekton ⬜
+      Task
+      TaskRun
+      Pipeline
+      PipelineRun
+      params
+      workspaces
+      logs
+      troubleshooting
     Health Monitoring ✅
       readiness ✅
         Running pode ser NotReady
@@ -790,6 +801,30 @@ API aceita + app falha
 → troubleshooting normal com oc
 ```
 
+### Cold sim de Helm
+
+```text
+Chart do zero
+→ erro real
+→ diagnóstico
+→ correção
+→ lint / dry-run
+→ install
+→ upgrade
+→ history
+→ rollback
+```
+
+Resultado:
+
+```text
+revision 1 → install
+revision 2 → upgrade
+revision 3 → rollback to 1
+
+Helm → ✅ consigo fazer sozinho
+```
+
 ---
 
 ## Kustomize — modelo mental
@@ -841,6 +876,36 @@ kustomization.yaml
 patch.yaml
 → estrutura de recurso Kubernetes
 → oc explain continua útil
+```
+
+---
+
+## Tekton — próximo fluxo
+
+```mermaid
+flowchart TD
+    TASK[Task] --> TR[TaskRun]
+    T1[Task] --> PIPE[Pipeline]
+    T2[Task] --> PIPE
+    PIPE --> PR[PipelineRun]
+    TR --> POD1[Pod / steps]
+    PR --> POD2[Pods / tasks]
+```
+
+Modelo mental inicial:
+
+```text
+Task
+→ receita de execução
+
+TaskRun
+→ uma execução da Task
+
+Pipeline
+→ encadeia Tasks
+
+PipelineRun
+→ uma execução da Pipeline
 ```
 
 ---
