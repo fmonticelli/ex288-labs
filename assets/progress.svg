@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="920" height="240" viewBox="0 0 920 240" role="img" aria-labelledby="title desc">
-  <title id="title">EX288 Cobertura Prática — 72%</title>
-  <desc id="desc">Cobertura prática dos estudos para o repositório de laboratório EX288. Último bloco concluído: Pods com múltiplos contêineres. Foco atual: OpenShift Templates.</desc>
+  <title id="title">EX288 Cobertura Prática — 80%</title>
+  <desc id="desc">Cobertura prática dos estudos para o repositório de laboratório EX288. Último bloco concluído: Helm com cold sim. Foco atual: OpenShift Pipelines / Tekton.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -38,7 +38,7 @@
   </text>
 
   <rect x="48" y="112" width="760" height="22" rx="11" fill="#1e293b"/>
-  <rect x="48" y="112" width="547.2" height="22" rx="11" fill="url(#progress)"/>
+  <rect x="48" y="112" width="608" height="22" rx="11" fill="url(#progress)"/>
 
   <rect x="824" y="101" width="64" height="44" rx="14" fill="#0f172a" stroke="#334155"/>
   <text x="856" y="129" text-anchor="middle" fill="#f8fafc" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">
@@ -47,12 +47,12 @@
 
   <circle cx="56" cy="174" r="5" fill="#22c55e"/>
   <text x="70" y="179" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">
-    Concluído: Pods com múltiplos contêineres
+    Concluído: Helm • cold sim
   </text>
 
   <circle cx="56" cy="204" r="5" fill="#38bdf8"/>
   <text x="70" y="209" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">
-    Foco atual: OpenShift Templates
+    Foco atual: OpenShift Pipelines / Tekton
   </text>
 
   <text x="888" y="207" text-anchor="end" fill="#64748b" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12">
