@@ -34,11 +34,11 @@ forte / praticado
 → Health Monitoring / Probes
 → ConfigMaps e Secrets
 → multi-container Pods
+→ Helm (cold sim completo; construção + lifecycle + troubleshooting)
 
 em andamento / precisa reforço
-→ OpenShift Templates (conteúdo praticado; falta ganhar fluência sob tempo)
-→ Helm (núcleo praticado; falta repetição a frio)
-→ Kustomize (base/overlay/patches praticados; falta troubleshooting + repetição)
+→ OpenShift Templates (cold sim completo; técnica forte, falta ganhar velocidade/atenção ao enunciado)
+→ Kustomize (base/overlay/patches praticados; troubleshooting adiado por prioridade)
 → timings e thresholds de probes
 → ImageChange trigger no Deployment
 → troubleshooting de ImageStreams
@@ -46,7 +46,7 @@ em andamento / precisa reforço
 → save-artifacts / incremental S2I
 
 ainda não coberto de forma suficiente
-→ Pipelines / Tekton
+→ Pipelines / Tekton (próximo foco)
 → Operators
 → console web
 ```
@@ -245,21 +245,21 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 
 ## 11. Helm
 
-- 🟡 Entender estrutura de um Chart
-- 🟡 `Chart.yaml`
-- 🟡 `values.yaml`
-- 🟡 Diretório `templates/`
-- 🟡 Criar Chart
-- 🟡 `helm template` e `helm lint`
-- 🟡 `helm install`
-- 🟡 `helm list` e `helm status`
-- 🟡 `helm get values` e `helm get manifest`
-- 🟡 `helm upgrade`
-- 🟡 `helm history`
-- 🟡 `helm rollback`
-- 🟡 `helm uninstall`
-- 🟡 Sobrescrever values com `-f` e `--set`
-- 🟡 Troubleshooting de Helm
+- ✅ Entender estrutura de um Chart
+- ✅ `Chart.yaml`
+- ✅ `values.yaml`
+- ✅ Diretório `templates/`
+- ✅ Criar Chart
+- ✅ `helm template` e `helm lint`
+- ✅ `helm install`
+- ✅ `helm list` e `helm status`
+- ✅ `helm get values` e `helm get manifest`
+- ✅ `helm upgrade`
+- ✅ `helm history`
+- ✅ `helm rollback`
+- ✅ `helm uninstall`
+- ✅ Sobrescrever values com `-f` e `--set`
+- ✅ Troubleshooting de Helm
 
 ## 12. Kustomize
 
@@ -307,7 +307,7 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Simulado de multi-container Pods
 - ⬜ Simulado de probes
 - 🟡 Simulado de Templates
-- ⬜ Simulado de Helm
+- ✅ Simulado de Helm
 - ⬜ Simulado de Kustomize
 - ⬜ Simulado de Tekton
 - ⬜ Simulado de troubleshooting
@@ -368,160 +368,155 @@ atualizar mindmap
 
 # Etapa atual
 
-## Fase 12 — Kustomize
+## Fase 13 — OpenShift Pipelines / Tekton
 
-### Helm — núcleo praticado
+### Cold sim de OpenShift Templates
 
-O bloco de Helm foi percorrido de ponta a ponta, mas permanece 🟡 até uma repetição a frio.
-
-Fluxo praticado:
+Arquivo:
 
 ```text
-Chart.yaml + values.yaml + templates/
-        ↓
-helm lint
-        ↓
-helm template
-        ↓
-dry-run contra a API
-        ↓
-helm install
-        ↓
-Release
-        ↓
-upgrade / history / rollback
-        ↓
-uninstall
+labs/10-templates/template-cold-sim.yaml
 ```
 
-Comandos usados:
-
-```bash
-helm create review-app
-helm lint ./ex288-app
-helm template teste ./ex288-app
-
-helm template teste ./ex288-app \
-  -f ex288-app/values-prod.yaml \
-  --set replicaCount=4
-
-helm template teste ./ex288-app \
-| oc apply --dry-run=server -f -
-
-helm install ex288-release ./ex288-app
-helm list
-helm status ex288-release
-helm get values ex288-prod
-helm get manifest ex288-prod
-helm upgrade ex288-release ./ex288-app --reuse-values --set replicaCount=3
-helm history ex288-release
-helm rollback ex288-release 1
-helm uninstall ex288-release
-```
-
-Troubleshooting praticado em três camadas:
+O exercício foi feito após alguns dias sem prática e cobriu:
 
 ```text
-template Helm inválido
-→ helm lint / helm template falham
-
-Helm renderiza, mas manifest é inválido
-→ dry-run=server rejeita
-
-manifest válido + Pod Running, mas aplicação não responde
-→ investigar com oc get / logs / exec / Service
+Template armazenável no cluster
+→ parameters
+→ required
+→ generate: expression
+→ Deployment + Service + Route
+→ processamento local
+→ processamento pelo nome
+→ dry-run contra a API
+→ criação dos recursos
+→ validação de env
+→ HTTP pela Route
 ```
 
-Pegadinha consolidada:
+Resultado:
 
 ```text
-containerPort
-→ não faz o processo escutar naquela porta
-
-porta real
-→ definida pelo processo da aplicação
+técnica de Templates          ✅ forte
+retenção após pausa           ✅
+fluxo oc apply / oc process   ✅
+troubleshooting               ✅
+velocidade / leitura rigorosa 🟡
 ```
 
-### Kustomize — em andamento
+O bloco continua 🟡 porque o cold sim exigiu uma intervenção para revisar duas evidências do enunciado, apesar da implementação técnica ter sido concluída corretamente.
 
-Modelo mental atual:
+### Cold sim de Helm — concluído
+
+Estrutura criada do zero:
 
 ```text
-base/
-→ YAML Kubernetes normal
-
-overlay/
-→ reutiliza a base
-→ aplica diferenças
-
-kustomization.yaml
-→ resources
-→ replicas
-→ images
-→ labels
-→ patches
+labs/11-helm/helm-cold-sim/
+├── Chart.yaml
+├── values.yaml
+├── values-prod.yaml
+└── templates/
+    ├── deployment.yaml
+    └── service.yaml
 ```
 
-Estrutura praticada:
+Fluxo executado:
 
 ```text
-labs/12-kustomize/
-├── base/
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   └── kustomization.yaml
-└── overlays/
-    └── prod/
-        ├── kustomization.yaml
-        └── deployment-patch.yaml
+Chart do zero
+→ helm lint
+→ values.yaml
+→ values-prod.yaml
+→ --set
+→ dry-run
+→ install
+→ list / status
+→ get values / get manifest
+→ upgrade
+→ history
+→ rollback
 ```
 
-Fluxos usados:
+O exercício incluiu erro real durante a criação, diagnóstico, correção, nova validação e aplicação bem-sucedida.
 
-```bash
-oc kustomize .
-oc kustomize overlays/prod
-oc apply -k overlays/prod --dry-run=server
-oc apply -k overlays/prod --dry-run=server -o yaml
-```
-
-Transformações já praticadas:
+Revisões comprovadas:
 
 ```text
-resources ✅
-base + overlay ✅
-replicas ✅
-images ✅
-labels ✅
-patches ✅
-oc apply -k ✅
-troubleshooting ⬜
-repetição sem ajuda ⬜
+revision 1 → Install complete
+revision 2 → Upgrade complete
+revision 3 → Rollback to 1
 ```
 
-Regra importante:
+Também foi comprovado:
 
 ```text
-kustomization.yaml
-→ configuração local do Kustomize
-→ não é recurso da API do cluster
-→ oc explain não descreve sua sintaxe
+Service :9090 respondendo
+ENVIRONMENT=prod no Pod
+upgrade 2 → 4 réplicas
+rollback 4 → 2 réplicas
+```
 
-conteúdo do patch
-→ estrutura Kubernetes normal
-→ oc explain ajuda a reconstruir campos
+**Helm agora está marcado como ✅ consigo fazer sozinho.**
+
+### Kustomize — mantido como 🟡
+
+Já praticado:
+
+```text
+resources
+base + overlays
+replicas
+images
+labels
+patches
+oc kustomize
+oc apply -k
+```
+
+O troubleshooting e o cold sim foram adiados deliberadamente para priorizar tópicos ainda não cobertos.
+
+### Tekton — ambiente validado
+
+O cluster expõe os recursos principais em `tekton.dev/v1`:
+
+```text
+Task
+TaskRun
+Pipeline
+PipelineRun
+```
+
+Também foram encontrados os CRDs de Tekton/OpenShift Pipelines. O binário `tkn` ainda não está instalado, mas o estudo pode começar usando `oc`.
+
+Modelo mental inicial:
+
+```text
+Task
+→ define os steps
+
+TaskRun
+→ executa uma Task
+
+Task + Task
+→ Pipeline
+
+PipelineRun
+→ executa uma Pipeline
 ```
 
 ---
 
 # Próxima atividade
 
-## Fechar Kustomize e iniciar Tekton
+## Tekton — Task e TaskRun
 
 ```text
-Kustomize troubleshooting
-→ repetição curta sem ajuda
-→ Tekton / OpenShift Pipelines
+oc explain task
+→ criar Task
+→ aplicar
+→ criar TaskRun
+→ acompanhar execução
+→ logs
+→ params
+→ depois Pipeline / PipelineRun
 ```
-
-Kustomize continuará 🟡 até o troubleshooting e uma repetição a frio. Helm também permanece 🟡 até um exercício posterior sem ajuda.
