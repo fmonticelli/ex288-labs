@@ -1,0 +1,78 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  app-name: cold-app
+metadata:
+  name: template-cold-sim
+
+parameters:
+  - name: APP_NAME
+    value: cold-app
+  - name: IMAGE
+    value: registry.access.redhat.com/ubi9/ubi
+  - name: ENVIRONMENT
+    required: true
+  - name: RANDOM_ID
+    generate: expression
+    from: "[a-zA-Z0-9]{6}"
+
+objects:
+  - kind: Deployment
+    apiVersion: apps/v1
+    metadata:
+      labels:
+        app: ${APP_NAME}
+      name: ${APP_NAME}
+    spec:
+      replicas: 2
+      selector:
+        matchLabels:
+          app: ${APP_NAME}
+      template:
+        metadata:
+          labels: 
+            app: ${APP_NAME}
+        spec:
+          containers:
+            - name: ${APP_NAME}
+              image: ${IMAGE}
+              ports:
+                - name: http
+                  containerPort: 8080
+              command:
+                - bash
+                - -c
+                - python3 -m http.server 8080
+              env:
+                - name: ENVIRONMENT
+                  value: ${ENVIRONMENT}
+                - name: RANDOM_ID
+                  value: ${RANDOM_ID}
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      labels:
+        app: ${APP_NAME}
+      name: ${APP_NAME}
+    spec:
+      selector:
+        app: ${APP_NAME}
+      ports:
+        - name:
+          port: 8080
+          targetPort: 8080
+
+  - kind: Route
+    apiVersion: route.openshift.io/v1
+    metadata:
+      name: ${APP_NAME}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      to:
+        kind: Service
+        name: ${APP_NAME}
+      tls:
+        insecureEdgeTerminationPolicy:  Redirect
+        termination: edge  
