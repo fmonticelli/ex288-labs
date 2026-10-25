@@ -17,7 +17,7 @@ Legenda:
 > Estimativa de cobertura prática do conteúdo da EX288 com base no que já foi estudado e executado em laboratório. Não representa peso oficial de questões nem probabilidade de aprovação.
 
 <p align="center">
-  <img src="assets/dashboard.svg?v=80" alt="EX288 Dashboard de Estudos — 80%" width="920">
+  <img src="assets/dashboard.svg?v=84" alt="EX288 Dashboard de Estudos — 84%" width="920">
 </p>
 
 Leitura rápida:
@@ -46,7 +46,7 @@ em andamento / precisa reforço
 → save-artifacts / incremental S2I
 
 ainda não coberto de forma suficiente
-→ Pipelines / Tekton (próximo foco)
+→ Pipelines / Tekton (Task/TaskRun, params e workspaces praticados; Pipeline é o próximo passo)
 → Operators
 → console web
 ```
@@ -74,6 +74,7 @@ A métrica acompanha **cobertura de conteúdo**, não domínio sob pressão de p
 - [10 — OpenShift Templates — labs](labs/10-templates/)
 - [11 — Helm — labs](labs/11-helm/)
 - [12 — Kustomize — labs](labs/12-kustomize/)
+- [13 — OpenShift Pipelines / Tekton](topics/13-tekton/) — [labs](labs/13-tekton/)
 
 O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `topics/` guardam conceitos, comandos, exercícios, validações e troubleshooting realizados durante os laboratórios.
 
@@ -276,16 +277,16 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 
 ## 13. OpenShift Pipelines / Tekton
 
-- ⬜ Entender Task
-- ⬜ Criar Task
-- ⬜ Executar TaskRun
+- ✅ Entender Task
+- ✅ Criar Task
+- ✅ Executar TaskRun
 - ⬜ Criar Pipeline
 - ⬜ Executar PipelineRun
-- ⬜ Utilizar parameters
-- ⬜ Utilizar workspaces
+- ✅ Utilizar parameters
+- ✅ Utilizar workspaces em Task/TaskRun
 - ⬜ Conectar Tasks
-- ⬜ Acompanhar execução
-- ⬜ Consultar logs
+- ✅ Acompanhar execução
+- ✅ Consultar logs por Step
 - ⬜ Troubleshooting de pipelines
 
 ## 14. Operators
@@ -475,7 +476,7 @@ oc apply -k
 
 O troubleshooting e o cold sim foram adiados deliberadamente para priorizar tópicos ainda não cobertos.
 
-### Tekton — ambiente validado
+### Tekton — núcleo de Task/TaskRun praticado
 
 O cluster expõe os recursos principais em `tekton.dev/v1`:
 
@@ -486,37 +487,144 @@ Pipeline
 PipelineRun
 ```
 
-Também foram encontrados os CRDs de Tekton/OpenShift Pipelines. O binário `tkn` ainda não está instalado, mas o estudo pode começar usando `oc`.
+O bloco inicial foi praticado do zero usando `oc`, sem depender do `tkn`.
 
-Modelo mental inicial:
+Estrutura atual dos labs:
+
+```text
+labs/13-tekton/
+├── 01-task-single/
+├── 02-task-multi/
+├── 03-task-params/
+└── 04-task-workspace/
+    ├── 01-emptydir-basic/
+    └── 02-workspace-path/
+```
+
+Fluxo comprovado:
 
 ```text
 Task
-→ define os steps
+→ definição dos Steps
 
 TaskRun
-→ executa uma Task
+→ execução concreta
 
-Task + Task
-→ Pipeline
+TaskRun
+→ cria Pod
 
-PipelineRun
-→ executa uma Pipeline
+Steps
+→ containers do Pod
+→ executam em sequência
+```
+
+Conceitos praticados:
+
+```text
+1 Task + 1 Step                 ✅
+1 Task + vários Steps           ✅
+TaskRun                         ✅
+Pod gerado pelo TaskRun         ✅
+logs por step                   ✅
+params obrigatórios             ✅
+params com default              ✅
+TaskRun sobrescrevendo params   ✅
+workspace em Task/TaskRun       ✅
+emptyDir entre Steps            ✅
+$(workspaces.<nome>.path)       ✅
+```
+
+Substituições importantes:
+
+```text
+$(params.NAME)
+→ substituição de parâmetro do Tekton
+
+$(workspaces.NAME.path)
+→ caminho do workspace resolvido pelo Tekton
+
+$(cat arquivo)
+→ command substitution do shell
+```
+
+Workspace praticado:
+
+```text
+Task.spec.workspaces
+→ declara necessidade
+
+TaskRun.spec.workspaces
+→ fornece storage concreto
+
+emptyDir
+→ suficiente para compartilhar arquivos entre Steps do MESMO TaskRun/Pod
+```
+
+Limite importante já identificado:
+
+```text
+Task A → TaskRun A → Pod A
+Task B → TaskRun B → Pod B
+
+emptyDir de A ≠ emptyDir de B
+
+Para compartilhar arquivos entre Tasks diferentes:
+→ usar workspace com storage compartilhado, como PVC
+```
+
+Comandos usados:
+
+```bash
+oc api-resources | grep -Ei 'task|pipeline'
+oc get crd | grep -Ei 'tekton|pipeline'
+
+oc explain task
+oc explain task.spec
+oc explain task.spec.steps
+oc explain task.spec.params
+oc explain task.spec.workspaces
+
+oc explain taskrun
+oc explain taskrun.spec
+oc explain taskrun.spec.taskRef
+oc explain taskrun.spec.params
+oc explain taskrun.spec.workspaces
+
+oc apply --dry-run=server -f <arquivo>
+oc apply -f <arquivo>
+
+oc get task
+oc get taskrun
+oc describe task <nome>
+oc describe taskrun <nome>
+oc get pods --sort-by=.metadata.creationTimestamp
+oc logs <pod> -c step-<nome>
 ```
 
 ---
 
 # Próxima atividade
 
-## Tekton — Task e TaskRun
+## Tekton — Pipeline e PipelineRun
 
 ```text
-oc explain task
-→ criar Task
-→ aplicar
-→ criar TaskRun
-→ acompanhar execução
-→ logs
-→ params
-→ depois Pipeline / PipelineRun
+Task A
+   ↓
+Task B
+
+Pipeline
+   ↓
+PipelineRun
+   ↓
+TaskRun A + TaskRun B
+   ↓
+Pod A + Pod B
+```
+
+Depois do Pipeline básico:
+```text
+params em Pipeline
+→ workspace compartilhado entre Tasks
+→ PVC
+→ troubleshooting
 ```
