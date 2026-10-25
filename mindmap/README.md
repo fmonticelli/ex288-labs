@@ -17,7 +17,7 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | Health Monitoring / Probes | ✅ core / 🟡 timings | [Abrir](../topics/07-health-monitoring/) |
 | ConfigMaps e Secrets | ✅ core / 🟡 envFrom manifest | [Abrir](../topics/06-configmaps-secrets/) |
 | Troubleshooting | 🟡 em evolução | [Abrir](../topics/09-troubleshooting/) |
-| OpenShift Templates | 🟡 cold sim concluído | [Labs](../labs/10-templates/) |
+| OpenShift Templates | ✅ cold sim concluído | [Labs](../labs/10-templates/) |
 | Helm | ✅ cold sim concluído | [Labs](../labs/11-helm/) |
 | Kustomize | 🟡 núcleo praticado / adiado | [Labs](../labs/12-kustomize/) |
 | Tekton / Pipelines | 🟡 Task/TaskRun + params + workspaces | [Abrir](../topics/13-tekton/) |
@@ -156,7 +156,7 @@ mindmap
       logs por container ✅
       exec por container ✅
       troubleshooting Init CrashLoopBackOff ✅
-    OpenShift Templates 🟡
+    OpenShift Templates ✅
       parameters
       objects
       oc process
