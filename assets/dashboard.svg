@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520" role="img" aria-labelledby="title desc">
   <title id="title">EX288 — Dashboard de Estudos</title>
-  <desc id="desc">Dashboard visual da cobertura prática dos estudos EX288. Cobertura estimada em 80%, último bloco concluído Helm com cold sim, próximo foco OpenShift Pipelines / Tekton.</desc>
+  <desc id="desc">Dashboard visual da cobertura prática dos estudos EX288. Cobertura estimada em 84%, núcleo de Task/TaskRun do Tekton praticado, próximo foco Pipeline e PipelineRun.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#07111f"/>
@@ -41,25 +41,25 @@
   <text x="58" y="132" class="section">Cobertura prática</text>
   <text x="58" y="153" class="small">Estimativa de conteúdo já praticado no laboratório</text>
   <rect x="58" y="176" width="438" height="18" rx="9" fill="#1e293b"/>
-  <rect x="58" y="176" width="350.4" height="18" rx="9" fill="url(#progress)"/>
+  <rect x="58" y="176" width="367.9" height="18" rx="9" fill="url(#progress)"/>
   <rect x="512" y="161" width="54" height="48" rx="14" fill="#111827" stroke="#334155"/>
-  <text x="539" y="191" text-anchor="middle" class="value">80%</text>
+  <text x="539" y="191" text-anchor="middle" class="value">84%</text>
 
   <circle cx="62" cy="220" r="5" fill="#22c55e"/>
   <text x="76" y="225" class="small">Forte/praticado: 11 áreas</text>
   <circle cx="252" cy="220" r="5" fill="#f59e0b"/>
   <text x="266" y="225" class="small">Revisar: 7 pontos</text>
   <circle cx="408" cy="220" r="5" fill="#64748b"/>
-  <text x="422" y="225" class="small">Pendentes: 3 áreas</text>
+  <text x="422" y="225" class="small">Pendentes: 2 áreas</text>
 
   <rect x="604" y="104" width="280" height="142" rx="18" fill="#0f172a" stroke="#1e293b"/>
   <text x="626" y="132" class="section">Situação atual</text>
   <circle cx="632" cy="162" r="6" fill="#22c55e"/>
-  <text x="648" y="166" class="small">Último concluído</text>
-  <text x="648" y="185" class="label">Helm • cold sim</text>
+  <text x="648" y="166" class="small">Último praticado</text>
+  <text x="648" y="185" class="label">Tekton • Task/TaskRun</text>
   <circle cx="632" cy="210" r="6" fill="#38bdf8"/>
   <text x="648" y="214" class="small">Próximo foco</text>
-  <text x="648" y="233" class="label">Tekton / Pipelines</text>
+  <text x="648" y="233" class="label">Pipeline / PipelineRun</text>
 
   <text x="42" y="282" class="section">Roadmap prático</text>
   <text x="42" y="302" class="small">Visão rápida do caminho já percorrido e do que vem a seguir</text>
