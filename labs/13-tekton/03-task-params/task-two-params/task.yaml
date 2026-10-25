@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata: 
+  name: app-info
+spec:
+  params:
+    - name: APP_NAME
+      type: string
+    - name: ENVIRONMENT
+      default: dev
+      type: string
+  steps:
+    - name: step-01
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+      args:
+        - 'echo "Application: $(params.APP_NAME)"; echo "Environment: $(params.ENVIRONMENT)";'

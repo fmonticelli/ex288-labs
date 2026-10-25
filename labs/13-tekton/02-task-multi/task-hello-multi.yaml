@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: hello-task-multi
+  labels:
+    app: hello-task-multi
+spec:
+  steps:
+    - name: first
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - echo "FIRST STEP"
+    - name: second
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - echo "SECOND STEP"

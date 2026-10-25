@@ -1,0 +1,13 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: app-info-run
+spec:
+  params:
+    - name: APP_NAME
+      value: inventory-api
+    - name: ENVIRONMENT
+      value: prod
+  taskRef:
+    kind: Task
+    name: app-info

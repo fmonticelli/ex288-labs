@@ -1,0 +1,13 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: hello-taskrun-params
+  labels:
+    app: hello-task-params
+spec:
+  params:
+    - name: MESSAGE
+      value: "EX288 TEKTON"
+  taskRef:
+    kind: Task
+    name: hello-task-params

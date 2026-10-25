@@ -1,0 +1,10 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: hello-taskrun-multi
+  labels:
+    app: hello-task-multi
+spec:
+  taskRef:
+    kind: Task
+    name: hello-task-multi

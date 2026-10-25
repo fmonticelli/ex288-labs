@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: workspace-path-demo-run
+spec:
+  workspaces:
+    - name: shared-data
+      emptyDir: {}
+  taskRef:
+    name: workspace-path-demo
+    kind: Task

@@ -1,0 +1,26 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: workspace-path-demo
+spec:
+  workspaces:
+    - name: shared-data
+  steps:
+    - name: prepare
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo 'inventory-api' > $(workspaces.shared-data.path)/app.txt;
+          echo 'production' > $(workspaces.shared-data.path)/environment.txt;
+
+    - name: inspect
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo "Workspace path: $(workspaces.shared-data.path)";
+          echo "Application: $(cat $(workspaces.shared-data.path)/app.txt)";
+          echo "Environment: $(cat $(workspaces.shared-data.path)/environment.txt)";
