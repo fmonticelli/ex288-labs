@@ -35,9 +35,9 @@ forte / praticado
 → ConfigMaps e Secrets
 → multi-container Pods
 → Helm (cold sim completo; construção + lifecycle + troubleshooting)
+→ OpenShift Templates (cold sim completo)
 
 em andamento / precisa reforço
-→ OpenShift Templates (cold sim completo; técnica forte, falta ganhar velocidade/atenção ao enunciado)
 → Kustomize (base/overlay/patches praticados; troubleshooting adiado por prioridade)
 → timings e thresholds de probes
 → ImageChange trigger no Deployment
@@ -235,14 +235,14 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 
 ## 10. OpenShift Templates
 
-- 🟡 Entender Templates
-- 🟡 Criar Template
-- 🟡 Trabalhar com `parameters`
-- 🟡 Trabalhar com `objects`
-- 🟡 Processar Template
-- 🟡 Fornecer parâmetros
-- 🟡 Utilizar Templates existentes
-- 🟡 Troubleshooting de Templates
+- ✅ Entender Templates
+- ✅ Criar Template
+- ✅ Trabalhar com `parameters`
+- ✅ Trabalhar com `objects`
+- ✅ Processar Template
+- ✅ Fornecer parâmetros
+- ✅ Utilizar Templates existentes
+- ✅ Troubleshooting de Templates
 
 ## 11. Helm
 
@@ -307,7 +307,7 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Simulado de ConfigMaps e Secrets
 - ✅ Simulado de multi-container Pods
 - ⬜ Simulado de probes
-- 🟡 Simulado de Templates
+- ✅ Simulado de Templates
 - ✅ Simulado de Helm
 - ⬜ Simulado de Kustomize
 - ⬜ Simulado de Tekton
@@ -398,14 +398,13 @@ Template armazenável no cluster
 Resultado:
 
 ```text
-técnica de Templates          ✅ forte
+Templates                     ✅
 retenção após pausa           ✅
 fluxo oc apply / oc process   ✅
 troubleshooting               ✅
-velocidade / leitura rigorosa 🟡
 ```
 
-O bloco continua 🟡 porque o cold sim exigiu uma intervenção para revisar duas evidências do enunciado, apesar da implementação técnica ter sido concluída corretamente.
+**OpenShift Templates agora está marcado como ✅ consigo fazer sozinho.**
 
 ### Cold sim de Helm — concluído
 
