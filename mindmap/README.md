@@ -20,7 +20,7 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | OpenShift Templates | 🟡 cold sim concluído | [Labs](../labs/10-templates/) |
 | Helm | ✅ cold sim concluído | [Labs](../labs/11-helm/) |
 | Kustomize | 🟡 núcleo praticado / adiado | [Labs](../labs/12-kustomize/) |
-| Tekton / Pipelines | ⬜ próximo foco | — |
+| Tekton / Pipelines | 🟡 Task/TaskRun + params + workspaces | [Abrir](../topics/13-tekton/) |
 
 ---
 
@@ -189,15 +189,17 @@ mindmap
       patches
       oc apply -k
       troubleshooting ⬜
-    Tekton ⬜
-      Task
-      TaskRun
-      Pipeline
-      PipelineRun
-      params
-      workspaces
-      logs
-      troubleshooting
+    Tekton 🟡
+      Task ✅
+      TaskRun ✅
+      Steps ✅
+      params ✅
+      workspaces ✅
+      logs ✅
+      Pipeline ⬜
+      PipelineRun ⬜
+      conectar Tasks ⬜
+      troubleshooting ⬜
     Health Monitoring ✅
       readiness ✅
         Running pode ser NotReady
@@ -880,32 +882,92 @@ patch.yaml
 
 ---
 
-## Tekton — próximo fluxo
+## Tekton — fluxo praticado
 
 ```mermaid
 flowchart TD
     TASK[Task] --> TR[TaskRun]
-    T1[Task] --> PIPE[Pipeline]
-    T2[Task] --> PIPE
-    PIPE --> PR[PipelineRun]
-    TR --> POD1[Pod / steps]
-    PR --> POD2[Pods / tasks]
+    TR --> POD[Pod]
+    POD --> S1[step-first]
+    POD --> S2[step-second]
+    PARAM[TaskRun params] --> TR
+    WS[TaskRun workspace] --> POD
 ```
 
-Modelo mental inicial:
+Modelo mental atual:
 
 ```text
 Task
-→ receita de execução
+→ receita
 
 TaskRun
-→ uma execução da Task
+→ execução concreta
 
-Pipeline
-→ encadeia Tasks
+TaskRun
+→ cria 1 Pod
 
-PipelineRun
-→ uma execução da Pipeline
+Steps
+→ containers no mesmo Pod
+→ execução sequencial
+```
+
+### Params
+
+```mermaid
+flowchart LR
+    TP[Task.spec.params] --> USE["$(params.NAME)"]
+    TRP[TaskRun.spec.params] --> TP
+    DEF[default] --> TP
+```
+
+```text
+Task.spec.params
+→ declara
+
+TaskRun.spec.params
+→ fornece / sobrescreve
+
+default
+→ usado quando TaskRun omite o valor
+```
+
+### Workspaces
+
+```mermaid
+flowchart TD
+    T[Task] --> DECL[declara shared-data]
+    TR[TaskRun] --> ED[emptyDir]
+    ED --> P[Pod]
+    P --> W[step-write]
+    P --> R[step-read]
+    W --> FILE[(message.txt)]
+    FILE --> R
+```
+
+```text
+$(workspaces.shared-data.path)
+→ caminho real do workspace
+
+emptyDir
+→ compartilha arquivos entre Steps do mesmo Pod
+
+Tasks diferentes
+→ TaskRuns diferentes
+→ Pods diferentes
+→ precisam de storage compartilhado, como PVC
+```
+
+### Próximo salto
+
+```mermaid
+flowchart TD
+    T1[Task A] --> P[Pipeline]
+    T2[Task B] --> P
+    P --> PR[PipelineRun]
+    PR --> TR1[TaskRun A]
+    PR --> TR2[TaskRun B]
+    TR1 --> POD1[Pod A]
+    TR2 --> POD2[Pod B]
 ```
 
 ---
