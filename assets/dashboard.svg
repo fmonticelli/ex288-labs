@@ -46,9 +46,9 @@
   <text x="539" y="191" text-anchor="middle" class="value">84%</text>
 
   <circle cx="62" cy="220" r="5" fill="#22c55e"/>
-  <text x="76" y="225" class="small">Forte/praticado: 11 áreas</text>
+  <text x="76" y="225" class="small">Forte/praticado: 12 áreas</text>
   <circle cx="252" cy="220" r="5" fill="#f59e0b"/>
-  <text x="266" y="225" class="small">Revisar: 7 pontos</text>
+  <text x="266" y="225" class="small">Revisar: 6 pontos</text>
   <circle cx="408" cy="220" r="5" fill="#64748b"/>
   <text x="422" y="225" class="small">Pendentes: 2 áreas</text>
 
