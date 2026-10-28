@@ -213,6 +213,128 @@ Task B
 
 Para compartilhar código/artefatos entre Tasks diferentes em uma Pipeline, o próximo passo é usar workspace com storage compartilhado, tipicamente PVC.
 
+## 05 — Pipeline básica
+
+Foram praticadas Pipelines com duas e três Tasks:
+
+```text
+Pipeline
+→ PipelineRun
+→ TaskRuns
+→ Pods
+```
+
+Dependências explícitas:
+
+```text
+build
+  ↓ runAfter
+test
+  ↓ runAfter
+deploy
+```
+
+`runAfter` referencia o nome lógico da Task dentro da Pipeline.
+
+Um erro real de imagem produziu:
+
+```text
+PipelineRun Failed
+→ TaskRunImagePullFailed
+→ Task seguinte não criada
+→ imagem corrigida
+→ nova PipelineRun
+→ Succeeded
+```
+
+## 06 — Params em Pipeline
+
+Fluxo consolidado:
+
+```text
+Task.spec.params
+→ declara o que a Task aceita
+
+Pipeline.spec.params
+→ declara o que a Pipeline aceita
+
+Pipeline.spec.tasks[].params
+→ repassa valores da Pipeline para a Task
+
+PipelineRun.spec.params
+→ fornece os valores concretos da execução
+```
+
+Exemplo praticado:
+
+```text
+PipelineRun
+APP_NAME=payment-api
+VERSION=2.5
+ENVIRONMENT=staging
+        ↓
+Pipeline
+        ├── build → APP_NAME + VERSION
+        └── deploy → APP_NAME + ENVIRONMENT
+```
+
+## 07 — Workspace compartilhado em Pipeline
+
+Pipeline com workspace compartilhado por PVC:
+
+```text
+PipelineRun
+→ workspace shared-data
+→ PVC
+        ↓
+Pipeline
+        ↓
+writer/build TaskRun → Pod A
+        ↓
+    artifact.txt
+        ↓
+reader/deploy TaskRun → Pod B
+```
+
+Binding praticado:
+
+```text
+Task.spec.workspaces
+→ declara workspace
+
+Pipeline.spec.workspaces
+→ declara workspace da Pipeline
+
+Pipeline.spec.tasks[].workspaces
+→ liga workspace da Pipeline ao workspace esperado pela Task
+
+PipelineRun.spec.workspaces
+→ liga workspace ao PVC concreto
+```
+
+O Tekton cria automaticamente o volume/mount do workspace nos Pods; não foi necessário declarar `volumes` ou `volumeMounts` manualmente.
+
+Comprovação no Pod:
+
+```text
+/workspace/shared-data
+→ PersistentVolumeClaim
+→ mesmo PVC montado por TaskRuns diferentes
+```
+
+Segundo exercício integrou:
+
+```text
+params + workspace + PVC + runAfter
+
+build
+→ grava artifact.txt
+
+deploy
+→ Pod diferente
+→ lê artifact.txt
+```
+
 ## Troubleshooting / inspeção já praticada
 
 ```bash
@@ -236,18 +358,13 @@ TaskRun falhou
 ## Próximo bloco
 
 ```text
-Pipeline
-→ PipelineRun
-→ várias Tasks
-→ vários TaskRuns
-→ vários Pods
-```
+08 — troubleshooting dedicado
 
-Depois:
-
-```text
-Pipeline params
-→ workspace compartilhado
-→ PVC
-→ troubleshooting
+PipelineRun
+→ TaskRun
+→ Pod / Step
+→ describe
+→ logs
+→ events
+→ correção
 ```
