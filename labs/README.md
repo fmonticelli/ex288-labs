@@ -11,7 +11,7 @@ Laboratórios e manifests criados durante os estudos.
 | Templates | `10-templates/` — inclui `template-cold-sim.yaml` |
 | Helm | `11-helm/` — inclui `helm-cold-sim/` |
 | Kustomize | `12-kustomize/` |
-| Tekton / OpenShift Pipelines | `13-tekton/` — Task, TaskRun, params e workspaces |
+| Tekton / OpenShift Pipelines | `13-tekton/` — Task/TaskRun, Pipeline/PipelineRun, params, workspaces e PVC |
 
 Os números seguem a numeração dos tópicos no checklist principal.
 Nem todo tópico possui um diretório próprio em `labs/`, pois alguns exercícios
