@@ -17,7 +17,7 @@ Legenda:
 > Estimativa de cobertura prática do conteúdo da EX288 com base no que já foi estudado e executado em laboratório. Não representa peso oficial de questões nem probabilidade de aprovação.
 
 <p align="center">
-  <img src="assets/dashboard.svg" alt="EX288 Dashboard de Estudos — 84%" width="920">
+  <img src="assets/dashboard.svg" alt="EX288 Dashboard de Estudos — 89%" width="920">
 </p>
 
 Leitura rápida:
@@ -38,6 +38,7 @@ forte / praticado
 → OpenShift Templates (cold sim completo)
 
 em andamento / precisa reforço
+→ Pipelines / Tekton (Pipeline/PipelineRun, params e workspace com PVC praticados; falta troubleshooting dedicado)
 → Kustomize (base/overlay/patches praticados; troubleshooting adiado por prioridade)
 → timings e thresholds de probes
 → ImageChange trigger no Deployment
@@ -46,7 +47,6 @@ em andamento / precisa reforço
 → save-artifacts / incremental S2I
 
 ainda não coberto de forma suficiente
-→ Pipelines / Tekton (Task/TaskRun, params e workspaces praticados; Pipeline é o próximo passo)
 → Operators
 → console web
 ```
@@ -280,14 +280,15 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Entender Task
 - ✅ Criar Task
 - ✅ Executar TaskRun
-- ⬜ Criar Pipeline
-- ⬜ Executar PipelineRun
-- ✅ Utilizar parameters
+- ✅ Criar Pipeline
+- ✅ Executar PipelineRun
+- ✅ Utilizar parameters em Task/TaskRun e Pipeline/PipelineRun
 - ✅ Utilizar workspaces em Task/TaskRun
-- ⬜ Conectar Tasks
+- ✅ Utilizar workspaces compartilhados com PVC em Pipeline
+- ✅ Conectar Tasks com `runAfter`
 - ✅ Acompanhar execução
 - ✅ Consultar logs por Step
-- ⬜ Troubleshooting de pipelines
+- 🟡 Troubleshooting de pipelines
 
 ## 14. Operators
 
@@ -475,7 +476,7 @@ oc apply -k
 
 O troubleshooting e o cold sim foram adiados deliberadamente para priorizar tópicos ainda não cobertos.
 
-### Tekton — núcleo de Task/TaskRun praticado
+### Tekton — Pipeline, params e workspaces praticados
 
 O cluster expõe os recursos principais em `tekton.dev/v1`:
 
@@ -495,9 +496,18 @@ labs/13-tekton/
 ├── 01-task-single/
 ├── 02-task-multi/
 ├── 03-task-params/
-└── 04-task-workspace/
-    ├── 01-emptydir-basic/
-    └── 02-workspace-path/
+├── 04-task-workspace/
+│   ├── 01-emptydir-basic/
+│   └── 02-workspace-path/
+├── 05-pipeline-basic/
+│   ├── 01-two-tasks/
+│   └── 02-three-tasks/
+├── 06-pipeline-params/
+│   ├── 01-single-task/
+│   └── 02-two-tasks/
+└── 07-pipeline-workspace/
+    ├── 01-basic-pvc/
+    └── 02-two-tasks-pvc/
 ```
 
 Fluxo comprovado:
@@ -520,17 +530,22 @@ Steps
 Conceitos praticados:
 
 ```text
-1 Task + 1 Step                 ✅
-1 Task + vários Steps           ✅
-TaskRun                         ✅
-Pod gerado pelo TaskRun         ✅
-logs por step                   ✅
-params obrigatórios             ✅
-params com default              ✅
-TaskRun sobrescrevendo params   ✅
-workspace em Task/TaskRun       ✅
-emptyDir entre Steps            ✅
-$(workspaces.<nome>.path)       ✅
+1 Task + 1 Step                         ✅
+1 Task + vários Steps                   ✅
+TaskRun                                 ✅
+Pod gerado pelo TaskRun                 ✅
+Pipeline / PipelineRun                  ✅
+runAfter                                ✅
+múltiplos TaskRuns / múltiplos Pods     ✅
+params em Task/TaskRun                  ✅
+params em Pipeline/PipelineRun          ✅
+repasse de params Pipeline → Task       ✅
+workspace em Task/TaskRun               ✅
+emptyDir entre Steps                    ✅
+workspace compartilhado entre Tasks     ✅
+PVC como backing do workspace           ✅
+$(workspaces.<nome>.path)               ✅
+logs por Step                           ✅
 ```
 
 Substituições importantes:
@@ -546,29 +561,47 @@ $(cat arquivo)
 → command substitution do shell
 ```
 
-Workspace praticado:
+Workspaces praticados:
 
 ```text
 Task.spec.workspaces
 → declara necessidade
 
 TaskRun.spec.workspaces
-→ fornece storage concreto
+→ fornece storage concreto para uma TaskRun
 
-emptyDir
-→ suficiente para compartilhar arquivos entre Steps do MESMO TaskRun/Pod
+Pipeline.spec.workspaces
+→ declara workspace compartilhável pela Pipeline
+
+Pipeline.spec.tasks[].workspaces
+→ repassa o workspace da Pipeline para cada Task
+
+PipelineRun.spec.workspaces
+→ faz o binding concreto
+→ emptyDir ou PVC
 ```
 
-Limite importante já identificado:
+Comprovação entre Pods diferentes:
 
 ```text
-Task A → TaskRun A → Pod A
-Task B → TaskRun B → Pod B
+writer TaskRun → Pod A
+→ grava artifact.txt no PVC
 
-emptyDir de A ≠ emptyDir de B
+deploy/reader TaskRun → Pod B
+→ monta o mesmo PVC
+→ lê artifact.txt
+```
 
-Para compartilhar arquivos entre Tasks diferentes:
-→ usar workspace com storage compartilhado, como PVC
+Regra consolidada:
+
+```text
+emptyDir
+→ Steps do mesmo Pod
+
+PVC
+→ Tasks diferentes
+→ TaskRuns diferentes
+→ Pods diferentes
 ```
 
 Comandos usados:
@@ -604,26 +637,15 @@ oc logs <pod> -c step-<nome>
 
 # Próxima atividade
 
-## Tekton — Pipeline e PipelineRun
+## Tekton — troubleshooting dedicado
 
 ```text
-Task A
-   ↓
-Task B
-
-Pipeline
-   ↓
-PipelineRun
-   ↓
-TaskRun A + TaskRun B
-   ↓
-Pod A + Pod B
+PipelineRun falhou
+→ identificar TaskRun
+→ identificar Pod / Step
+→ describe / logs / events
+→ corrigir causa
+→ nova execução
 ```
 
-Depois do Pipeline básico:
-```text
-params em Pipeline
-→ workspace compartilhado entre Tasks
-→ PVC
-→ troubleshooting
-```
+Já houve troubleshooting real de `TaskRunImagePullFailed`; o próximo bloco consolida falhas intencionais de params, workspaces e Steps.
