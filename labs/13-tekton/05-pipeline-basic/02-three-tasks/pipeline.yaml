@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: app-basic-pipeline
+spec:
+  tasks:
+    - name: build
+      taskRef:
+        name: app-build
+    - name: test
+      taskRef:
+        name: app-test
+      runAfter:
+        - build
+    - name: deploy
+      taskRef:
+        name: app-deploy
+      runAfter:
+        - test

@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: parameter-build
+spec:
+  params:
+    - name: APP_NAME
+    - name: VERSION
+  steps:
+    - name: build
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo "Building $(params.APP_NAME)";
+          echo "Version: $(params.VERSION)";

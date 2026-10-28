@@ -1,0 +1,12 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: deploy-pipeline-run
+spec:
+  params:
+    - name: APP_NAME
+      value: inventory-api
+    - name: ENVIRONMENT
+      value: production
+  pipelineRef:
+    name: deploy-pipeline

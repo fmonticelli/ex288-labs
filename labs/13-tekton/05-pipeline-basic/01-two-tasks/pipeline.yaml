@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: basic-pipeline
+spec:
+  tasks:
+    - name: pipeline-prepare
+      taskRef:
+        name: pipeline-prepare
+        kind: Task
+    - name: pipeline-deploy
+      taskRef:
+        name: pipeline-deploy
+        kind: Task
+      runAfter: 
+        - pipeline-prepare

@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: workspace-reader
+spec:
+  workspaces:
+    - name: shared-data
+  steps:
+    - name: read
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo "Message: $(cat $(workspaces.shared-data.path)/message.txt)";

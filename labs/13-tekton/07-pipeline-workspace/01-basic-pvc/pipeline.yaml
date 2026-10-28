@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: workspace-pipeline
+spec:
+  workspaces:
+    - name: shared-data
+  tasks:
+    - name: writer
+      workspaces:
+        - name: shared-data
+          workspace: shared-data
+      taskRef:
+        name: workspace-writer
+    - name: reader
+      workspaces:
+        - name: shared-data
+          workspace: shared-data
+      taskRef:
+        name: workspace-reader
+      runAfter:
+        - writer

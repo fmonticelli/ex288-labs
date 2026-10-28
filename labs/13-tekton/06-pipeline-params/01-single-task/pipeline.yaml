@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: deploy-pipeline
+spec:
+  params:
+    - name: APP_NAME
+    - name: ENVIRONMENT
+  tasks:
+    - name: deploy
+      params:
+        - name: APP_NAME
+          value: $(params.APP_NAME)
+        - name: ENVIRONMENT
+          value: $(params.ENVIRONMENT)
+      taskRef: 
+        name: deploy-app

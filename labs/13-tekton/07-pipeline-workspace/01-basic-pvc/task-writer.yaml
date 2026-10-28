@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: workspace-writer
+spec:
+  workspaces:
+    - name: shared-data
+  steps:
+    - name: write
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo "hello from writer task" > $(workspaces.shared-data.path)/message.txt;

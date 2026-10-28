@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: app-workspace-deploy
+spec:
+  workspaces:
+    - name: shared-data
+  params:
+    - name: ENVIRONMENT
+  steps:
+    - name: deploy
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo "Deploying to: $(params.ENVIRONMENT)";
+          echo "$(cat $(workspaces.shared-data.path)/artifact.txt)";

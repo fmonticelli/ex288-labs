@@ -1,0 +1,12 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: app-test
+spec:
+  steps:
+    - name: test
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - echo 'TEST OK';

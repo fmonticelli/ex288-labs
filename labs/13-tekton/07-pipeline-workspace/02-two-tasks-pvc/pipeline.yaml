@@ -1,0 +1,34 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: app-workspace-pipeline
+spec:
+  workspaces:
+    - name: shared-data
+  params:
+    - name: APP_NAME
+    - name: VERSION
+    - name: ENVIRONMENT
+  tasks:
+    - name: build
+      workspaces:
+        - name: shared-data
+          workspace: shared-data
+      params:
+        - name: APP_NAME
+          value: $(params.APP_NAME)
+        - name: VERSION
+          value: $(params.VERSION)
+      taskRef:
+        name: app-workspace-build
+    - name: deploy
+      workspaces:
+        - name: shared-data
+          workspace: shared-data
+      params:
+        - name: ENVIRONMENT
+          value: $(params.ENVIRONMENT)
+      taskRef:
+        name: app-workspace-deploy
+      runAfter:
+        - build

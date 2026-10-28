@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: workspace-pipeline-run
+spec:
+  workspaces:
+    - name: shared-data
+      persistentVolumeClaim:
+        claimName: pipeline-shared-data
+  pipelineRef:
+    name: workspace-pipeline

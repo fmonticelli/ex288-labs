@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: parameter-pipeline-run
+spec:
+  params:
+    - name: APP_NAME
+      value: "payment-api"
+    - name: VERSION
+      value: "2.5"
+    - name: ENVIRONMENT
+      value: "staging"
+  pipelineRef:
+    name: parameter-pipeline
