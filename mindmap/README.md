@@ -20,7 +20,7 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | OpenShift Templates | ✅ cold sim concluído | [Labs](../labs/10-templates/) |
 | Helm | ✅ cold sim concluído | [Labs](../labs/11-helm/) |
 | Kustomize | 🟡 núcleo praticado / adiado | [Labs](../labs/12-kustomize/) |
-| Tekton / Pipelines | 🟡 Task/TaskRun + params + workspaces | [Abrir](../topics/13-tekton/) |
+| Tekton / Pipelines | 🟡 Pipeline + params + workspace/PVC; falta troubleshooting | [Abrir](../topics/13-tekton/) |
 
 ---
 
@@ -193,13 +193,15 @@ mindmap
       Task ✅
       TaskRun ✅
       Steps ✅
-      params ✅
+      Pipeline ✅
+      PipelineRun ✅
+      runAfter ✅
+      params TaskRun ✅
+      params PipelineRun ✅
       workspaces ✅
+      PVC entre Tasks ✅
       logs ✅
-      Pipeline ⬜
-      PipelineRun ⬜
-      conectar Tasks ⬜
-      troubleshooting ⬜
+      troubleshooting 🟡
     Health Monitoring ✅
       readiness ✅
         Running pode ser NotReady
@@ -957,17 +959,51 @@ Tasks diferentes
 → precisam de storage compartilhado, como PVC
 ```
 
-### Próximo salto
+### Pipeline / PipelineRun
 
 ```mermaid
 flowchart TD
-    T1[Task A] --> P[Pipeline]
-    T2[Task B] --> P
-    P --> PR[PipelineRun]
-    PR --> TR1[TaskRun A]
-    PR --> TR2[TaskRun B]
+    PR[PipelineRun] --> P[Pipeline]
+    P --> T1[Task lógica build]
+    P --> T2[Task lógica deploy]
+    T1 --> TR1[TaskRun build]
+    T2 --> TR2[TaskRun deploy]
     TR1 --> POD1[Pod A]
     TR2 --> POD2[Pod B]
+    T1 -->|runAfter libera| T2
+```
+
+### Params em Pipeline
+
+```mermaid
+flowchart LR
+    PRP[PipelineRun.spec.params] --> PP[Pipeline.spec.params]
+    PP --> MAP[Pipeline.spec.tasks[].params]
+    MAP --> TP[Task.spec.params]
+    TP --> STEP["$(params.NAME)"]
+```
+
+### Workspace com PVC entre Tasks
+
+```mermaid
+flowchart TD
+    PVC[(PVC)] --> PRW[PipelineRun workspace]
+    PRW --> PW[Pipeline workspace]
+    PW --> BW[build workspace]
+    PW --> DW[deploy workspace]
+    BW --> PA[Pod A grava artifact.txt]
+    DW --> PB[Pod B lê artifact.txt]
+```
+
+```text
+params
+→ valores
+
+workspaces
+→ filesystem/storage
+
+PipelineRun
+→ fornece os valores e bindings concretos
 ```
 
 ---
