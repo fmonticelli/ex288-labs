@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520" role="img" aria-labelledby="title desc">
   <title id="title">EX288 — Dashboard de Estudos</title>
-  <desc id="desc">Dashboard visual da cobertura prática dos estudos EX288. Cobertura estimada em 89%, Pipeline/PipelineRun, params e workspaces com PVC praticados; próximo foco troubleshooting de Tekton.</desc>
+  <desc id="desc">Dashboard visual da cobertura prática dos estudos EX288. Cobertura estimada em 93%. Tekton, Operators e console web praticados; próximo foco ImageStreams, ImageChange e S2I incremental.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#07111f"/>
@@ -41,25 +41,25 @@
   <text x="58" y="132" class="section">Cobertura prática</text>
   <text x="58" y="153" class="small">Estimativa de conteúdo já praticado no laboratório</text>
   <rect x="58" y="176" width="438" height="18" rx="9" fill="#1e293b"/>
-  <rect x="58" y="176" width="389.8" height="18" rx="9" fill="url(#progress)"/>
+  <rect x="58" y="176" width="407.3" height="18" rx="9" fill="url(#progress)"/>
   <rect x="512" y="161" width="54" height="48" rx="14" fill="#111827" stroke="#334155"/>
-  <text x="539" y="191" text-anchor="middle" class="value">89%</text>
+  <text x="539" y="191" text-anchor="middle" class="value">93%</text>
 
   <circle cx="62" cy="220" r="5" fill="#22c55e"/>
-  <text x="76" y="225" class="small">Forte/praticado: 12 áreas</text>
+  <text x="76" y="225" class="small">Núcleo: praticado</text>
   <circle cx="252" cy="220" r="5" fill="#f59e0b"/>
-  <text x="266" y="225" class="small">Revisar: 6 pontos</text>
+  <text x="266" y="225" class="small">Revisar: lacunas</text>
   <circle cx="408" cy="220" r="5" fill="#64748b"/>
-  <text x="422" y="225" class="small">Pendentes: 2 áreas</text>
+  <text x="422" y="225" class="small">Adiado: Kustomize</text>
 
   <rect x="604" y="104" width="280" height="142" rx="18" fill="#0f172a" stroke="#1e293b"/>
   <text x="626" y="132" class="section">Situação atual</text>
   <circle cx="632" cy="162" r="6" fill="#22c55e"/>
   <text x="648" y="166" class="small">Último praticado</text>
-  <text x="648" y="185" class="label">Tekton • Pipeline/PVC</text>
+  <text x="648" y="185" class="label">Operators + console</text>
   <circle cx="632" cy="210" r="6" fill="#38bdf8"/>
   <text x="648" y="214" class="small">Próximo foco</text>
-  <text x="648" y="233" class="label">Troubleshooting Tekton</text>
+  <text x="648" y="233" class="label">ImageStreams + S2I</text>
 
   <text x="42" y="282" class="section">Roadmap prático</text>
   <text x="42" y="302" class="small">Visão rápida do caminho já percorrido e do que vem a seguir</text>
@@ -112,11 +112,11 @@
   <circle cx="766" cy="338" r="6" fill="#38bdf8"/>
   <text x="760" y="362" class="domain">Tekton</text>
   <text x="760" y="379" class="domain">Pipelines</text>
-  <text x="760" y="394" class="tiny">foco atual</text>
+  <text x="760" y="394" class="tiny">núcleo praticado</text>
 
   <rect x="36" y="422" width="848" height="62" rx="16" fill="#0f172a" stroke="#1e293b"/>
   <text x="56" y="447" class="label">Pontos para revisar</text>
-  <text x="56" y="468" class="small">Probes timings • Deployment ImageChange • ImageStreams troubleshooting • Custom Builder • S2I incremental</text>
+  <text x="56" y="468" class="small">Deployment ImageChange • ImageStreams troubleshooting • Custom Builder • S2I incremental</text>
 
   <text x="864" y="502" text-anchor="end" class="tiny">cobertura ≠ nota da prova</text>
 </svg>
