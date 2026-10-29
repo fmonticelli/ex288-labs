@@ -17,38 +17,33 @@ Legenda:
 > Estimativa de cobertura prática do conteúdo da EX288 com base no que já foi estudado e executado em laboratório. Não representa peso oficial de questões nem probabilidade de aprovação.
 
 <p align="center">
-  <img src="assets/dashboard.svg" alt="EX288 Dashboard de Estudos — 89%" width="920">
+  <img src="assets/dashboard.svg" alt="EX288 Dashboard de Estudos — 93%" width="920">
 </p>
 
 Leitura rápida:
 
 ```text
 forte / praticado
-→ Git e CLI oc
-→ Container Images
-→ BuildConfig e Builds
-→ ImageStreams
-→ S2I
-→ Deployments e rollouts
-→ Troubleshooting
-→ Health Monitoring / Probes
-→ ConfigMaps e Secrets
-→ multi-container Pods
-→ Helm (cold sim completo; construção + lifecycle + troubleshooting)
-→ OpenShift Templates (cold sim completo)
+→ Git e CLI oc; console web (Administrator e Developer)
+→ Container Images, BuildConfig/Builds, ImageStreams e S2I
+→ Deployments, rollouts, Services, Routes e probes
+→ ConfigMaps, Secrets e multi-container Pods
+→ Helm e OpenShift Templates (cold sims)
+→ Tekton: Task/TaskRun, Pipeline/PipelineRun, params, runAfter, PVC e logs
+→ Tekton: dois casos de troubleshooting executados (webhook e Step/workspace)
+→ Operators: Subscription, CSV, CRD, CR, spec, status e conditions
+→ Rede: selector, endpoints e HTTP 302 → HTTPS 200 validados
 
 em andamento / precisa reforço
-→ Pipelines / Tekton (Pipeline/PipelineRun, params e workspace com PVC praticados; falta troubleshooting dedicado)
-→ Kustomize (base/overlay/patches praticados; troubleshooting adiado por prioridade)
-→ timings e thresholds de probes
-→ ImageChange trigger no Deployment
-→ troubleshooting de ImageStreams
-→ Custom Builder
-→ save-artifacts / incremental S2I
+→ ImageChange trigger no Deployment e troubleshooting de ImageStreams
+→ save-artifacts / incremental S2I e Custom Builder
+→ Tekton: autonomia na correção de workspace entre Tasks
+→ Operators: troubleshooting de CR com falha real
+→ envFrom em manifest, timings de probes e multi-stage builds
 
-ainda não coberto de forma suficiente
-→ Operators
-→ console web
+praticado parcialmente / revisão adiada por prioridade
+→ Kustomize (base/overlays/patches; sem cold sim ou troubleshooting)
+→ troubleshooting básico de Pods (sem nova rodada de revisão)
 ```
 
 A métrica acompanha **cobertura de conteúdo**, não domínio sob pressão de prova. A prontidão real será validada por exercícios sem ajuda e simulados integrados.
@@ -91,7 +86,7 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Criar e utilizar Services
 - ✅ Criar e utilizar Routes
 - ✅ Trabalhar com Git no fluxo de deployment
-- ⬜ Utilizar o console web do OpenShift
+- ✅ Utilizar o console web do OpenShift (Deployment, Route/Service, PipelineRun e Operator)
 - ✅ Utilizar a CLI `oc`
 
 ## 2. Container Images
@@ -227,8 +222,9 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Diagnosticar `CrashLoopBackOff` / container reiniciando
 - ✅ Diagnosticar `ImagePullBackOff`
 - ✅ Diagnosticar falhas de Deployment / rollout
-- ⬜ Diagnosticar Services
-- ⬜ Diagnosticar Routes
+- 🟡 Diagnosticar Services (inspeção validada; sem falha provocada)
+- 🟡 Diagnosticar Routes (HTTP/HTTPS validado; sem falha provocada)
+- ✅ Conferir selector, endpoints e resposta HTTP/HTTPS ponta a ponta
 - ✅ Diagnosticar Builds
 - 🟡 Diagnosticar ImageStreams
 - 🟡 Diagnosticar problemas de configuração
@@ -288,16 +284,19 @@ O `mindmap/` mostra como os objetos e fluxos se conectam. Os diretórios em `top
 - ✅ Conectar Tasks com `runAfter`
 - ✅ Acompanhar execução
 - ✅ Consultar logs por Step
-- 🟡 Troubleshooting de pipelines
+- 🟡 Troubleshooting de pipelines (dois cenários praticados; correção de workspace exigiu orientação)
+- ✅ Identificar falha de parâmetro no webhook e recriar PipelineRun
+- ✅ Localizar Step com falha por PipelineRun → TaskRun → Pod → logs
 
 ## 14. Operators
 
-- ⬜ Identificar Operators disponíveis
-- ⬜ Identificar CRDs
-- ⬜ Consultar Custom Resources
-- ⬜ Criar recursos usando Operators existentes
-- ⬜ Consultar status e conditions
-- ⬜ Troubleshooting básico de recursos gerenciados por Operators
+- ✅ Identificar Operators disponíveis
+- ✅ Inspecionar Subscription, CSV e versão instalada
+- ✅ Identificar CRDs e recursos customizados com `oc api-resources`
+- ✅ Consultar Custom Resources e `ownerReferences`
+- ⬜ Criar recursos usando Operators existentes (não executado no cluster compartilhado)
+- ✅ Consultar `spec`, `status` e `conditions`
+- 🟡 Troubleshooting básico de recursos gerenciados por Operators (fluxo estudado; sem falha real)
 
 ## 15. Simulados
 
@@ -370,7 +369,7 @@ atualizar mindmap
 
 # Etapa atual
 
-## Fase 13 — OpenShift Pipelines / Tekton
+## Fase 14 — Operators e console web praticados
 
 ### Cold sim de OpenShift Templates
 
@@ -476,7 +475,7 @@ oc apply -k
 
 O troubleshooting e o cold sim foram adiados deliberadamente para priorizar tópicos ainda não cobertos.
 
-### Tekton — Pipeline, params e workspaces praticados
+### Tekton — Pipelines, workspaces e troubleshooting praticados
 
 O cluster expõe os recursos principais em `tekton.dev/v1`:
 
@@ -505,9 +504,13 @@ labs/13-tekton/
 ├── 06-pipeline-params/
 │   ├── 01-single-task/
 │   └── 02-two-tasks/
-└── 07-pipeline-workspace/
-    ├── 01-basic-pvc/
-    └── 02-two-tasks-pvc/
+├── 07-pipeline-workspace/
+│   ├── 01-basic-pvc/
+│   ├── 02-two-tasks-pvc/
+│   └── 03-three-tasks-pvc/
+└── 08-troubleshooting/
+    ├── 01-broken-pipeline/
+    └── 02-failing-step/
 ```
 
 Fluxo comprovado:
@@ -633,19 +636,68 @@ oc get pods --sort-by=.metadata.creationTimestamp
 oc logs <pod> -c step-<nome>
 ```
 
+### Tekton — troubleshooting executado
+
+```text
+01-broken-pipeline
+→ referência $(params.ENV) inexistente
+→ webhook rejeitou a Pipeline
+→ PipelineRun anterior terminou CouldntGetPipeline
+→ correção do parâmetro + nova execução
+→ Succeeded=True
+
+02-failing-step
+→ Step validate tentou ler artifact.txt inexistente
+→ diagnóstico pelos logs do Pod
+→ Task prepare criada antes de validate (runAfter)
+→ emptyDir não compartilhou arquivos entre TaskRuns/Pods
+→ PVC compartilhado + nova execução
+→ Succeeded=True
+```
+
+Os dois cenários foram executados. O diagnóstico de logs e do webhook foi feito na prática; o ajuste de `emptyDir` para PVC no segundo caso precisou de orientação.
+
+### Operators — discovery e saúde do OpenShift Pipelines
+
+```text
+Subscription: openshift-pipelines-operator-rh
+→ channel latest; InstallPlan Automatic
+→ CSV v1.24.2: Succeeded
+→ TektonConfig/config: Ready=True; ComponentsReady=True
+→ TektonPipeline/pipeline: Ready=True
+→ TektonTrigger/trigger: Ready=True
+→ ownerReferences: TektonTrigger controlado por TektonConfig
+→ Pods gerenciados: Running/Ready
+```
+
+Inspecionados `oc get co`, `oc get csv -A`, `oc get subscriptions -A`, `oc api-resources`, `oc explain`, `oc describe` e `status.conditions`. `observedGeneration` não foi preenchido pela CR consultada; a ausência isolada desse campo não foi tratada como falha.
+
+Não foi criada CR nova nem provocada falha em Operator do cluster compartilhado.
+
+### Console web e networking — validação
+
+```text
+Deployment cold-sim → 2/2 réplicas disponíveis
+Service cold-sim → selector app=cold-sim; 2 endpoints :8080
+Route cold-sim → TLS edge + redirect
+HTTP → 302 para HTTPS
+HTTPS → 200 OK (servidor Python)
+PipelineRun release-pipeline-run → Succeeded; prepare → build → deploy
+Operator instalado → OpenShift Pipelines v1.24.2
+```
+
+Uma Route responder `302` não comprova resposta do backend; o `200` por HTTPS confirmou o caminho até a aplicação. A aplicação do laboratório servia um directory listing, o que não seria uma configuração apropriada para produção.
+
 ---
 
 # Próxima atividade
 
-## Tekton — troubleshooting dedicado
+## Revisão prática direcionada
 
 ```text
-PipelineRun falhou
-→ identificar TaskRun
-→ identificar Pod / Step
-→ describe / logs / events
-→ corrigir causa
-→ nova execução
+1. ImageStreams + ImageChange triggers no Deployment
+2. S2I incremental / save-artifacts
+3. Custom Builder / BuildConfig, se houver tempo
 ```
 
-Já houve troubleshooting real de `TaskRunImagePullFailed`; o próximo bloco consolida falhas intencionais de params, workspaces e Steps.
+Kustomize e troubleshooting básico de Pods permanecem sem nova rodada de revisão. Os itens não praticados continuam com ⬜ ou 🟡 no checklist; cobertura estimada não significa domínio completo.
