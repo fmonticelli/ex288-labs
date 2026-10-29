@@ -8,7 +8,7 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 
 | Área | Status | Material |
 |---|---|---|
-| Fundamentos OpenShift e Git | ✅ | [Abrir](../topics/01-openshift-git/) |
+| Fundamentos OpenShift e Git / Console Web | ✅ | [Abrir](../topics/01-openshift-git/) |
 | Container Images | ✅ / 🟡 multi-stage | [Abrir](../topics/02-container-images/) |
 | BuildConfig e Builds | ✅ / 🟡 custom builder | [Abrir](../topics/03-buildconfig-builds/) |
 | ImageStreams | ✅ / 🟡 troubleshooting | [Abrir](../topics/04-imagestreams/) |
@@ -16,11 +16,12 @@ Este mapa cresce junto com os estudos. O objetivo é mostrar **como os objetos d
 | Deployments e aplicações | ✅ rollout + multi-container | [Abrir](../topics/08-deployments-applications/) |
 | Health Monitoring / Probes | ✅ core / 🟡 timings | [Abrir](../topics/07-health-monitoring/) |
 | ConfigMaps e Secrets | ✅ core / 🟡 envFrom manifest | [Abrir](../topics/06-configmaps-secrets/) |
-| Troubleshooting | 🟡 em evolução | [Abrir](../topics/09-troubleshooting/) |
+| Troubleshooting | 🟡 rede validada; falhas de Operators ainda não simuladas | [Abrir](../topics/09-troubleshooting/) |
 | OpenShift Templates | ✅ cold sim concluído | [Labs](../labs/10-templates/) |
 | Helm | ✅ cold sim concluído | [Labs](../labs/11-helm/) |
 | Kustomize | 🟡 núcleo praticado / adiado | [Labs](../labs/12-kustomize/) |
-| Tekton / Pipelines | 🟡 Pipeline + params + workspace/PVC; falta troubleshooting | [Abrir](../topics/13-tekton/) |
+| Tekton / Pipelines | ✅ núcleo + 2 casos de troubleshooting / 🟡 correção guiada de PVC | [Labs](../labs/13-tekton/) |
+| Operators | ✅ discovery e inspeção / 🟡 falha real | [Checklist](../README.md#14-operators) |
 
 ---
 
@@ -61,6 +62,7 @@ mindmap
     Fundamentos ✅
       Projects / Namespaces
       oc CLI
+      Console web ✅
       Git
       Pods
       Services
@@ -130,6 +132,9 @@ mindmap
       Deployment rollout ✅
       Events ✅
       Pending ⬜
+      Service e Route 🟡
+        selector e endpoints conferidos
+        HTTP 302 para HTTPS 200
     ConfigMaps e Secrets ✅
       ConfigMap
         literal ✅
@@ -189,7 +194,7 @@ mindmap
       patches
       oc apply -k
       troubleshooting ⬜
-    Tekton 🟡
+    Tekton núcleo ✅
       Task ✅
       TaskRun ✅
       Steps ✅
@@ -201,7 +206,22 @@ mindmap
       workspaces ✅
       PVC entre Tasks ✅
       logs ✅
+      webhook param inválido ✅
+      Step sem arquivo ✅
+      emptyDir entre Pods 🟡
       troubleshooting 🟡
+    Operators 🟡
+      Subscription e CSV ✅
+      CRD e CR ✅
+      spec e status conditions ✅
+      ownerReferences ✅
+      Criar CR ⬜
+      Falha real de CR 🟡
+    Console web ✅
+      Deployment e rollout
+      Service e Route
+      PipelineRun e logs
+      Operator instalado
     Health Monitoring ✅
       readiness ✅
         Running pode ser NotReady
@@ -1004,6 +1024,147 @@ workspaces
 
 PipelineRun
 → fornece os valores e bindings concretos
+```
+
+---
+## Tekton — troubleshooting praticado
+
+```mermaid
+flowchart TD
+    PR[PipelineRun falhou] --> START{TaskRun criada?}
+    START -->|Não| VALID[Verificar Pipeline, params e webhook]
+    VALID --> FIX1[Corrigir variável inexistente]
+    FIX1 --> NEW1[Nova PipelineRun]
+    START -->|Sim| TR[TaskRun]
+    TR --> POD[Pod]
+    POD --> STEP[Step]
+    STEP --> LOG[oc logs -c step-nome]
+    LOG --> FILE[artifact.txt não encontrado]
+    FILE --> WS{Tasks em Pods diferentes?}
+    WS -->|Sim| PVC[Workspace com PVC compartilhado]
+    PVC --> NEW2[Nova PipelineRun]
+```
+
+Laboratórios executados:
+
+```text
+08-troubleshooting/01-broken-pipeline
+→ Pipeline rejeitada pelo webhook por $(params.ENV) inexistente
+→ PipelineRun ficou CouldntGetPipeline
+→ variável corrigida, execução recriada e Succeeded=True
+
+08-troubleshooting/02-failing-step
+→ Step validate falhou ao ler artifact.txt inexistente
+→ logs identificaram o arquivo ausente
+→ prepare executada antes de validate com runAfter
+→ emptyDir isolado por Pod; corrigido com PVC (com orientação)
+→ PipelineRun Succeeded=True
+```
+
+### Regra de storage consolidada
+
+```text
+Steps da mesma TaskRun / Pod
+→ emptyDir pode compartilhar arquivos
+
+Tasks diferentes / TaskRuns e Pods diferentes
+→ emptyDir não é compartilhado entre os Pods
+→ usar storage acessível aos dois, como PVC
+
+runAfter
+→ define ordem, não transfere arquivos
+```
+
+---
+
+## Operators — descoberta e reconciliação
+
+```mermaid
+flowchart TD
+    SUB[Subscription] --> CSV[CSV / versão do Operator]
+    CSV --> CRD[CRD / novo tipo de recurso]
+    CRD --> CR[Custom Resource]
+    CR --> SPEC[spec / estado desejado]
+    OP[Operator / controlador] --> STATUS[status.conditions / observado]
+    SPEC --> OP
+    OP --> CHILD[Recursos gerenciados]
+    CHILD --> STATUS
+```
+
+Inspeção executada no cluster:
+
+```text
+Subscription openshift-pipelines-operator-rh
+→ channel latest / aprovação Automatic
+
+CSV openshift-pipelines-operator-rh.v1.24.2
+→ Succeeded
+
+TektonConfig/config
+→ Ready=True / ComponentsReady=True
+→ status.observedGeneration não preenchido
+
+TektonPipeline/pipeline
+→ Ready=True
+
+TektonTrigger/trigger
+→ Ready=True
+→ ownerReferences aponta para TektonConfig/config
+```
+
+```text
+CSV Succeeded
+→ instalação do Operator OK
+≠
+CR necessariamente saudável
+
+CR Ready=False
+→ oc describe da CR
+→ conditions / reason / message
+→ CRs filhas, Pods, logs e events
+```
+
+Não foi criada uma CR nova nem simulada uma falha de Operator no cluster compartilhado.
+
+---
+
+## Console web e rede — fluxo validado
+
+```mermaid
+flowchart LR
+    CLIENT[Cliente] -->|HTTP| ROUTE[Route TLS edge]
+    ROUTE -->|302 Redirect| HTTPS[HTTPS]
+    HTTPS -->|encaminha| SVC[Service cold-sim]
+    SVC -->|selector app=cold-sim| PODS[2 Pods :8080]
+    PODS -->|resposta| OK[200 OK]
+```
+
+```text
+Console web
+→ Deployment cold-sim: 2/2 réplicas disponíveis
+→ Service e Route: host, porta e destino
+→ PipelineRun release-pipeline-run: prepare → build → deploy
+→ CSV do OpenShift Pipelines: v1.24.2
+
+CLI / curl
+→ Service com dois endpoints e selector compatível
+→ HTTP 302 esperado por insecureEdgeTerminationPolicy: Redirect
+→ HTTPS 200 confirma resposta do servidor Python
+```
+
+Não confundir `302` do router com `200` da aplicação; Pods Ready e endpoints também não garantem, isoladamente, uma resposta HTTP válida.
+
+---
+
+## Revisão prática direcionada
+
+```text
+ImageStreams + ImageChange triggers no Deployment
+→ S2I save-artifacts / incremental
+→ Custom Builder / BuildConfig (se houver tempo)
+
+Kustomize e troubleshooting básico de Pods
+→ revisão adicional não priorizada
 ```
 
 ---
