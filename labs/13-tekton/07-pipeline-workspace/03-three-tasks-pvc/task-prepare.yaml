@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: release-prepare
+spec:
+  workspaces:
+    - name: release
+  params:
+    - name: APP_NAME
+    - name: VERSION
+  steps:
+    - name: prepare
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo "Application: $(params.APP_NAME)" > $(workspaces.release.path)/release.info;
+          echo "Version: $(params.VERSION)" >> $(workspaces.release.path)/release.info;

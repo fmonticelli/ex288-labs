@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: prepare-artifact
+spec:
+  workspaces:
+    - name: data
+  steps:
+    - name: prepare
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo "Application: inventory-api" > $(workspaces.data.path)/artifact.txt;
+          echo "Version: 1.0" >> $(workspaces.data.path)/artifact.txt;
+          echo "Status: READY" >> $(workspaces.data.path)/artifact.txt;

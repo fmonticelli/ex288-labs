@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: artifact-validation-pipeline-run
+spec:
+  pipelineRef:
+    name: artifact-validation-pipeline
+  workspaces:
+    - name: data
+      persistentVolumeClaim:
+        claimName: task-validate-data

@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: artifact-validation-pipeline
+spec:
+  workspaces:
+    - name: data
+  tasks:
+    - name: prepare
+      taskRef:
+        name: prepare-artifact
+      workspaces:
+        - name: data
+          workspace: data
+
+    - name: validate
+      taskRef:
+        name: validate-artifact
+      workspaces:
+        - name: data
+          workspace: data
+      runAfter:
+        - prepare

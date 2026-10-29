@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: troubleshoot-pipeline
+spec:
+  params:
+    - name: APP_NAME
+    - name: VERSION
+    - name: ENVIRONMENT
+  tasks:
+    - name: build
+      taskRef:
+        name: troubleshoot-build
+      params:
+        - name: APP_NAME
+          value: $(params.APP_NAME)
+        - name: VERSION
+          value: $(params.VERSION)
+
+    - name: deploy
+      runAfter:
+        - build
+      taskRef:
+        name: troubleshoot-deploy
+      params:
+        - name: APP_NAME
+          value: $(params.APP_NAME)
+        - name: ENVIRONMENT
+          value: $(params.ENVIRONMENT)

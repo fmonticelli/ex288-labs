@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: release-build
+spec:
+  workspaces:
+    - name: release
+  steps:
+    - name: build
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          cat $(workspaces.release.path)/release.info > $(workspaces.release.path)/build.result;
+          echo "Build: SUCCESS" >> $(workspaces.release.path)/build.result;

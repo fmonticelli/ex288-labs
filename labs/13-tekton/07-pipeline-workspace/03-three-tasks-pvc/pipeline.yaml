@@ -1,0 +1,44 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: release-pipeline
+spec:
+  params:
+    - name: APP_NAME
+    - name: VERSION
+    - name: ENVIRONMENT
+  workspaces:
+    - name: release
+  tasks:
+    - name: prepare
+      params:
+        - name: APP_NAME
+          value: $(params.APP_NAME)
+        - name: VERSION
+          value: $(params.VERSION)
+      workspaces:
+        - name: release
+          workspace: release
+      taskRef: 
+        name: release-prepare
+
+    - name: build
+      workspaces:
+        - name: release
+          workspace: release
+      taskRef:
+        name: release-build
+      runAfter:
+        - prepare
+
+    - name: deploy
+      params:
+        - name: ENVIRONMENT
+          value: $(params.ENVIRONMENT)
+      workspaces:
+        - name: release
+          workspace: release
+      taskRef:
+        name: release-deploy
+      runAfter:
+        - build

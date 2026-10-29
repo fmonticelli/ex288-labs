@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: release-pipeline-run
+spec:
+  workspaces:
+    - name: release
+      persistentVolumeClaim:
+        claimName: release-data
+  params:
+    - name: APP_NAME
+      value: "orders-api"
+    - name: VERSION
+      value: "5.7"
+    - name: ENVIRONMENT
+      value: "production"
+  pipelineRef:
+    name: release-pipeline

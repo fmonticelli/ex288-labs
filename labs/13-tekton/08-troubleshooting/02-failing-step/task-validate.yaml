@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: validate-artifact
+spec:
+  workspaces:
+    - name: data
+  steps:
+    - name: validate
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo "Validating artifact...";
+          cat $(workspaces.data.path)/artifact.txt;
+          echo "Artifact validated successfully";

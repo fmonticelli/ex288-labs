@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: release-deploy
+spec:
+  workspaces:
+    - name: release
+  params:
+    - name: ENVIRONMENT
+  steps:
+    - name: deploy
+      image: registry.access.redhat.com/ubi9/ubi
+      command:
+        - bash
+        - -c
+        - |
+          echo "Deploying release to: $(params.ENVIRONMENT)";
+          cat $(workspaces.release.path)/build.result;

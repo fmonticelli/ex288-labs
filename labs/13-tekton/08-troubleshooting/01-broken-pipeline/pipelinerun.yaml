@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: troubleshoot-pipeline-run
+spec:
+  pipelineRef:
+    name: troubleshoot-pipeline
+  params:
+    - name: APP_NAME
+      value: inventory-api
+    - name: VERSION
+      value: "4.0"
+    - name: ENVIRONMENT
+      value: production
